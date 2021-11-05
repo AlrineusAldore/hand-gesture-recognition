@@ -83,7 +83,7 @@ def main():
 
         # Edges after color
         grayColor = cv2.cvtColor(openingMaskRes, cv2.COLOR_BGR2GRAY)
-        ret, binaryColor = cv2.threshold(grayColor, 50, 255, cv2.THRESH_BINARY)
+        ret, binaryColor = cv2.threshold(grayColor, 20, 255, cv2.THRESH_BINARY)
         colorEdge = cv2.Canny(binaryColor, 100, 200)
 
         colorContour = openingMaskRes.copy()
@@ -92,15 +92,49 @@ def main():
         drawContours(colorEdge, colorContour, colorCanvas)
 
 
-        stack = stackImages(0.4, ([img, imgHSV, colorEdge, blurEdge, blurEdge2],
-                                  [bothMasks, bothMasksRes, colorContour, imgContour1, imgContour2],
-                                  [closingMask, closingMaskRes, colorCanvas, imgCanvas1, imgCanvas2],
-                                  [openingMask, openingMaskRes, binaryColor, imgMask, imgMask2]))
+
+        # compare background
+        bg = cv2.imread('background.jpg')
+        #bgGray = cv2.cvtColor(bg, cv2.COLOR_BGR2GRAY)
+        #bgMask = cv2.bitwise_and(imgGray, bgGray, mask=None)
+        someBg = CompareImgs(img, bg)
+
+
+
+        stack = stackImages(0.4, ([img, imgHSV, colorEdge, img, blurEdge],
+                                  [bothMasks, bothMasksRes, colorContour, img, imgContour1],
+                                  [closingMask, closingMaskRes, colorCanvas, img, imgCanvas1],
+                                  [openingMask, openingMaskRes, binaryColor, bg, someBg]))
 
         cv2.imshow("stack", stack)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
+
+
+
+def CompareImgs(img, template):
+    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    templateGray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+    # Store width and height of template in w and h
+    w, h = templateGray.shape[::-1]
+
+    # Perform match operations.
+    res = cv2.matchTemplate(imgGray, templateGray, cv2.TM_CCOEFF_NORMED)
+
+    # Specify a threshold
+    threshold = 0.8
+
+    # Store the coordinates of matched area in a numpy array
+    loc = np.where(res >= threshold)
+
+    # Draw a rectangle around the matched region.
+    for pt in zip(*loc[::-1]):
+        cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
+
+    return img
+
 
 
 
@@ -132,17 +166,18 @@ def empty(a):
 
 def drawContours(img, imgContour, imgCanvas):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    #print("\nstart of img:\n")
+    print("\n!!!!!!!!!!!!!!!!!!!!start of img!!!!!!!!!!!!:\n")
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > 20:  # to discard small random lines
-            #print('area: ', area)
+            print("cuntour: ", cnt)
+            print('area: ', area)
             cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 5)
             cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 5)
 
             peri = cv2.arcLength(cnt, True)  # perimeter
-            approx = cv2.approxPolyDP(cnt, 0.2*peri, True)
-            #print("approx: ", approx)
+            approx = cv2.approxPolyDP(cnt, 0.2*peri, True)  # Points
+            print("approx: ", approx)
             cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 9)
             cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 9)
 
