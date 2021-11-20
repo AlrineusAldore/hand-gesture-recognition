@@ -41,20 +41,18 @@ def biner_and_contour(img):
     skinRegionHSV = cv2.inRange(hsvim, lower, upper)
     blurred = cv2.blur(skinRegionHSV, (2, 2))
     ret, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY)
-    cv2.imshow("thresh", thresh)
 
-    transformed = cv2.distanceTransform(thresh, cv2.DIST_L2, 3)
-    norm_image = cv2.normalize(src=transformed, dst=transformed, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    cv2.imshow("transformed", norm_image)
 
-    #contors
+    #contours
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = max(contours, key=lambda x: cv2.contourArea(x))
-    cv2.drawContours(img, [contours], -1, (255, 255, 0), 2)
-    cv2.imshow("contours", img)
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    imgContours = img.copy()
+    cv2.drawContours(imgContours, [contours], -1, (255, 255, 0), 2)
+
+
+    return thresh, imgContours
+
 
 def compare_average_and_dominant_colors(img):
 
@@ -113,10 +111,70 @@ def main():
 
     compare_average_and_dominant_colors(cropped_image)
     delete_backgroung(img)
-    biner_and_contour(img)
+    binary, imgContours = biner_and_contour(img)
+    transform = distanceTransform(img, binary)
+
+    stack = stackImages(0.6, [[binary, imgContours, transform]])
+
+    cv2.imshow("stack", stack)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
+
+def distanceTransform(img, binary):
+
+    inBetween = cv2.distanceTransform(binary, cv2.DIST_L2, 3)
+    transformed = cv2.normalize(src=inBetween, dst=inBetween, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+
+    return transformed
+
+
+
+
+
+
+
+
+def stackImages(scale,imgArray):
+    rows = len(imgArray)
+    cols = len(imgArray[0])
+    rowsAvailable = isinstance(imgArray[0], list)
+    width = imgArray[0][0].shape[1]
+    height = imgArray[0][0].shape[0]
+    if rowsAvailable:
+        for x in range ( 0, rows):
+            for y in range(0, cols):
+                if imgArray[x][y].shape[:2] == imgArray[0][0].shape [:2]:
+                    imgArray[x][y] = cv2.resize(imgArray[x][y], (0, 0), None, scale, scale)
+                else:
+                    imgArray[x][y] = cv2.resize(imgArray[x][y], (imgArray[0][0].shape[1], imgArray[0][0].shape[0]), None, scale, scale)
+                if len(imgArray[x][y].shape) == 2: imgArray[x][y]= cv2.cvtColor( imgArray[x][y], cv2.COLOR_GRAY2BGR)
+        imageBlank = np.zeros((height, width, 3), np.uint8)
+        hor = [imageBlank]*rows
+        hor_con = [imageBlank]*rows
+        for x in range(0, rows):
+            hor[x] = np.hstack(imgArray[x])
+        ver = np.vstack(hor)
+    else:
+        for x in range(0, rows):
+            if imgArray[x].shape[:2] == imgArray[0].shape[:2]:
+                imgArray[x] = cv2.resize(imgArray[x], (0, 0), None, scale, scale)
+            else:
+                imgArray[x] = cv2.resize(imgArray[x], (imgArray[0].shape[1], imgArray[0].shape[0]), None,scale, scale)
+            if len(imgArray[x].shape) == 2: imgArray[x] = cv2.cvtColor(imgArray[x], cv2.COLOR_GRAY2BGR)
+        hor= np.hstack(imgArray)
+        ver = hor
+    return ver
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     main()
