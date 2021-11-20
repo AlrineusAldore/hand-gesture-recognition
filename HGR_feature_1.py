@@ -43,6 +43,10 @@ def biner_and_contour(img):
     ret, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY)
     cv2.imshow("thresh", thresh)
 
+    transformed = cv2.distanceTransform(thresh, cv2.DIST_L2, 3)
+    norm_image = cv2.normalize(src=transformed, dst=transformed, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    cv2.imshow("transformed", norm_image)
+
     #contors
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = max(contours, key=lambda x: cv2.contourArea(x))
