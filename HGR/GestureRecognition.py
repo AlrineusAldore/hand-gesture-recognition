@@ -99,7 +99,7 @@ def slow(imgTransformed):
     return skeleton
 
 
-def hsvDiffrentiation(img):
+def hsvDifferentiation(img):
     # Color
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
