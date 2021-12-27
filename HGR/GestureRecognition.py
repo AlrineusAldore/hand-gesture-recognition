@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 from matplotlib import pyplot as plt
 
 import cython
@@ -7,12 +8,14 @@ import cython
 
 
 VID_NAME = "handGestures\\handGesturesVid.mp4"
+SET_VALUES_MANUALLY = False
 
 def main():
     cap = cv2.VideoCapture(VID_NAME)
     n = 0
 
-    #InitializeWindows()
+    if SET_VALUES_MANUALLY:
+        InitializeWindows()
 
     while cap.isOpened():
 
@@ -43,33 +46,38 @@ def main():
         imgGray = cv2.cvtColor(imgBlur, cv2.COLOR_BGR2GRAY)
         (thresh, imgBinary) = cv2.threshold(imgGray, 255, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
+
         imgEdge = cv2.Canny(imgBlur, 30, 30)
         imgCanvas = blankImg.copy()
         imgContours = img.copy()
         drawContours(imgEdge, imgContours, imgCanvas)
 
 
-        imgHsv, readyBinary, readyImg, readyContour = hsvDiffrentiation(img)
+        imgHsv, readyBinary, readyImg, readyContour = hsvDifferentiation(img)
 
         imgTransformed = distanceTransform(readyBinary)
         #compare_average_and_dominant_colors(resizedImg)
 
         contourImg = feature_2_func(readyImg)
 
-        thresh, skeleton = cv2.threshold(imgTransformed, 1, 255, cv2.THRESH_BINARY)
+        #Find the center of the hand from the distance transformation
+        thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
 
 
+        circle = getCircle(imgTransformed)
+
+        fingers = cv2.subtract(readyBinary, circle, mask=None)
+        findFingers(fingers)
 
         stack = stackImages(0.6, [[img, contourImg, imgGray, imgBinary],
-                                  [imgBlur, imgEdge, imgContours ,imgCanvas],
+                                  [imgTransformed, centerImg, circle ,fingers],
                                   [imgHsv, readyBinary, readyImg, readyContour]])
 
 
 
         cv2.imshow("stack", stack)
-        cv2.imshow("hi", imgTransformed)
-        cv2.imshow("hi2", skeleton)
-        #cv2.waitKey(100)
+        #cv2.imshow("hi2", autoCropBinImg(imgTransformed))
+        cv2.waitKey(0)
 
 
         #plt.imshow(stack)
@@ -82,21 +90,61 @@ def main():
 
 
 
-def slow(imgTransformed):
+def findFingers(img):
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    count = 0
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > 20:  # to discard small random lines
+            cv2.drawContours(img, cnt, -1, 100, 2)
+            count += 1
+
+    cv2.putText(img, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+
+
+def getCircle(imgTransformed):
     h = imgTransformed.shape[0]
     w = imgTransformed.shape[1]
 
-    skeleton = imgTransformed.copy()
+    thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
 
+    center = 0,0
 
+    breakNestedLoop = False
     for y in range(0, h):
         for x in range(0, w):
-            if imgTransformed[y,x] == 240:
-                skeleton[y,x] = imgTransformed[y,x]
-            else:
-                skeleton[y,x] = 0
+            if centerImg[y,x] != 0:
+                center = x,y
+                breakNestedLoop = True
+                break
+        if breakNestedLoop:
+            break
 
-    return skeleton
+    crop, r = autoCropBinImg(imgTransformed)
+    print("radius:", r)
+    circle = cv2.circle(centerImg, center, r, 255, -1)
+
+    return circle
+
+
+def autoCropBinImg(bin):
+    white_pt_coords=np.argwhere(bin)
+
+    crop = bin  #in case bin is completely black
+
+    if cv2.countNonZero(bin) != 0:
+        min_y = min(white_pt_coords[:,0])
+        min_x = min(white_pt_coords[:,1])
+        max_y = max(white_pt_coords[:,0])
+        max_x = max(white_pt_coords[:,1])
+
+        r = int(min([max_y - min_y, max_x - min_x]) // 2)
+
+        crop = bin[min_y:max_y,min_x:max_x]
+
+    return crop, r
+
+
 
 
 def hsvDifferentiation(img):
@@ -113,14 +161,15 @@ def hsvDifferentiation(img):
     vMin = 0
     vMax = 255
     # HSV
-    #h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars") # 20
-    #h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars") # 160
-    #h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars") # 0
-    #h2Max = cv2.getTrackbarPos("Hue2 Max", "Trackbars") # 179
-    #sMin = cv2.getTrackbarPos("Sat Min", "Trackbars") # 10
-    #sMax = cv2.getTrackbarPos("Sat Max", "Trackbars") # 70-100
-    #vMin = cv2.getTrackbarPos("Val Min", "Trackbars") # 0-90
-    #vMax = cv2.getTrackbarPos("Val Max", "Trackbars") # 255
+    if SET_VALUES_MANUALLY:
+        h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")  # 20
+        h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")  # 160
+        h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")  # 0
+        h2Max = cv2.getTrackbarPos("Hue2 Max", "Trackbars")  # 179
+        sMin = cv2.getTrackbarPos("Sat Min", "Trackbars")  # 10
+        sMax = cv2.getTrackbarPos("Sat Max", "Trackbars")  # 70-100
+        vMin = cv2.getTrackbarPos("Val Min", "Trackbars")  # 0-90
+        vMax = cv2.getTrackbarPos("Val Max", "Trackbars")  # 255
     # print("Hue:", hMin, hMax, "Sat:", sMin, sMax, "val:", vMin, vMax)
     lower = np.array([h1Min, sMin, vMin])
     upper = np.array([h1Max, sMax, vMax])
@@ -193,7 +242,7 @@ def InitializeWindows():
     cv2.createTrackbar("Hue2 Max", "Trackbars", 179, 179, empty)
     cv2.createTrackbar("Sat Min", "Trackbars", 80, 255, empty)
     cv2.createTrackbar("Sat Max", "Trackbars", 255, 255, empty)
-    cv2.createTrackbar("Val Min", "Trackbars", 0, 179, empty)
+    cv2.createTrackbar("Val Min", "Trackbars", 0, 255, empty)
     cv2.createTrackbar("Val Max", "Trackbars", 255, 255, empty)
 
 
@@ -286,7 +335,15 @@ def distanceTransform(binary):
 
     dist = cv2.distanceTransform(binary, cv2.DIST_L2, 3)
 
-    transformed = cv2.normalize(src=dist, dst=dist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    normalized = cv2.normalize(src=dist, dst=dist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    transformed = (normalized*255).astype(np.uint8)
+    #for arr in normalized:
+    #    transformed.append((arr*255).astype(int))
+
+    #print("dist: \n",dist, "\n\n\n\n\n")
+    #print("transformed: \n",transformed, "\n\n\n\n\n")
+    #print("normalized: \n",normalized, "\n\n\n\n\n")
 
     return transformed
 
