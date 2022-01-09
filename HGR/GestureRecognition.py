@@ -8,7 +8,7 @@ import cython
 
 
 
-VID_NAME = "handGestures\\handGesturesVid.mp4"
+VID_NAME = "Videos\\handGesturesVid.mp4"
 SET_VALUES_MANUALLY = True
 
 def main():
@@ -504,6 +504,7 @@ def stackImages(scale,imgArray):
         hor= np.hstack(imgArray)
         ver = hor
     return ver
+
 
 if __name__ == "__main__":
     main()
