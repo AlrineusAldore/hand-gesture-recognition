@@ -4,14 +4,15 @@ import time
 from matplotlib import pyplot as plt
 
 import cython
+#Recist Code
 
 
 
 VID_NAME = "handGestures\\handGesturesVid.mp4"
-SET_VALUES_MANUALLY = False
+SET_VALUES_MANUALLY = True
 
 def main():
-    cap = cv2.VideoCapture(VID_NAME)
+    cap = cv2.VideoCapture(0)
     n = 0
 
     if SET_VALUES_MANUALLY:
@@ -64,7 +65,7 @@ def main():
         thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
 
 
-        circle = getCircle(imgTransformed)
+        circle = readyBinary.copy()#getCircle(imgTransformed)
 
         fingers = cv2.subtract(readyBinary, circle, mask=None)
         findFingers(fingers)
@@ -77,7 +78,7 @@ def main():
 
         cv2.imshow("stack", stack)
         #cv2.imshow("hi2", autoCropBinImg(imgTransformed))
-        cv2.waitKey(0)
+        #cv2.waitKey(0)
 
 
         #plt.imshow(stack)
