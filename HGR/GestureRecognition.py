@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 from matplotlib import pyplot as plt
-
+import seaborn as sns
 import cython
 #Recist Code
 
@@ -22,6 +22,7 @@ def main():
 
 
         success, img = cap.read()
+
         #Reset video if it ends
         if not success:
             cap = cv2.VideoCapture(VID_NAME)
@@ -32,7 +33,6 @@ def main():
         n += 1
         if n % 10 != 0:
             continue
-        #cv2.waitKey(0)
 
 
         img = img[160:490, 0:330]
@@ -53,13 +53,15 @@ def main():
         imgContours = img.copy()
         drawContours(imgEdge, imgContours, imgCanvas)
 
-
+        #avarage color
         imgHsv, readyBinary, readyImg, readyContour = hsvDifferentiation(img)
 
+        #find_max_color(img)
+
         imgTransformed = distanceTransform(readyBinary)
-        #compare_average_and_dominant_colors(resizedImg)
 
         contourImg = feature_2_func(readyImg)
+        #compare_average_and_dominant_colors(contourImg)
 
         #Find the center of the hand from the distance transformation
         thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
@@ -89,6 +91,34 @@ def main():
             break
 
 
+def histogram(img):
+    b, g, r = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+    hist_b = cv2.calcHist([b], [0], None, [256], [0, 256])
+    hist_g = cv2.calcHist([g], [0], None, [256], [0, 256])
+    hist_r = cv2.calcHist([r], [0], None, [256], [0, 256])
+    #trying to smooth out the histograms
+    #sns.histplot(hist_b, color="blue", label="100% Equities", kde=True, stat="density", linewidth=256)
+    #sns.histplot(hist_g, color="green", label="100% Equities", kde=True, stat="density", linewidth=256)
+    #sns.histplot(hist_r, color="red", label="100% Equities", kde=True, stat="density", linewidth=256)
+    plt.plot(hist_r, color='r', label="r")
+    plt.plot(hist_g, color='g', label="g")
+    plt.plot(hist_b, color='b', label="b")
+    plt.legend()
+    plt.show()
+
+    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = img2[:, :, 0], img2[:, :, 1], img2[:, :, 2]
+    hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
+    hist_s = cv2.calcHist([s], [0], None, [256], [0, 256])
+    hist_v = cv2.calcHist([v], [0], None, [256], [0, 256])
+    plt.plot(hist_h, color='r', label="h")
+    plt.plot(hist_s, color='g', label="s")
+    plt.plot(hist_v, color='b', label="v")
+    plt.legend()
+    plt.title(f"{hist_h.argmax()}, {hist_h.argmin()}, {hist_s.argmax()}, {hist_s.argmin()}, {hist_v.argmax()}, {hist_v.argmin()}")
+    plt.show()
+
+    return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), hist_s.argmin(), hist_v.argmax(), hist_v.argmin()
 
 
 def findFingers(img):
@@ -147,20 +177,60 @@ def autoCropBinImg(bin):
 
 
 
+def find_max_color(img):
+    # Number of bins
+    LENGTH = 16
+    WIDTH = 16
+    HEIGHT = 16
+    bins = [LENGTH, WIDTH, HEIGHT];
+
+    # Range of bins
+    ranges = [0, 256, 0, 256, 0, 256];
+    # Array of Image
+    images = [img]
+    # Number of channels
+    channels = [0, 1, 2]
+
+    # Calculate the Histogram
+    hist = cv2.calcHist(images, channels, None, bins, ranges)
+
+    # sortedIndex contains the indexes the
+    sortedIndex = np.argsort(hist.flatten())
+
+    # 1-D index of the max color in histogram
+    index = sortedIndex[-1]
+
+    # Getting the 3-D index from the 1-D index
+    k = index / (WIDTH * HEIGHT)
+    j = (index % (WIDTH * HEIGHT)) / WIDTH
+    i = index - j * WIDTH - k * WIDTH * HEIGHT
+
+    # Print the max RGB Value
+    print("Max RGB Value is = ", [i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH])
+    maxColor = img.copy()
+    maxColor[:] = (i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH)
+
+    stack3 = stackImages(0.2, [maxColor, img])
+
+    cv2.imshow("stack 3", stack3)
 
 def hsvDifferentiation(img):
     # Color
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
+    # histogram
+    h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
+
     # HSV
     h1Min = 0
-    h1Max = 14
-    h2Min = 179
-    h2Max = 179
     sMin = 80
-    sMax = 255
     vMin = 0
+    h1Max = 179
+    sMax = 255
     vMax = 255
+    h2Min = h1Min
+    h2Max = h1Max
+
     # HSV
     if SET_VALUES_MANUALLY:
         h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")  # 20
@@ -215,15 +285,29 @@ def hsvDifferentiation(img):
     colorCanvas[:] = 0,0,0
     drawContours(colorEdge, colorContour, colorCanvas)
 
-    stack2 = stackImages(0.6, [[bothMasks, bothMasksRes],
-                               [closingMask, closingMaskRes],
-                               [openingMask, openingMaskRes]])
+    #use the masks to get avarage color
+    average = cv2.mean(bothMasksRes, bothMasks)
+    # Makes a new image for average color
+    bothMasksAverage = img.copy()
+    bothMasksAverage[:] = (average[0], average[1], average[2])
 
-    #cv2.imshow("stack 2", stack2)
+    #use the masks to get avarage color
+    average = cv2.mean(closingMaskRes, closingMask)
+    closingMaskAverage = img.copy()
+    closingMaskAverage[:] = (average[0], average[1], average[2])
+
+    #use the masks to get avarage color
+    average = cv2.mean(openingMaskRes, openingMask)
+    openingMaskAverage = img.copy()
+    openingMaskAverage[:] = (average[0], average[1], average[2])
+
+    stack2 = stackImages(0.9, [[bothMasks, bothMasksRes, bothMasksAverage],
+                               [closingMask, closingMaskRes, closingMaskAverage],
+                               [openingMask, openingMaskRes, openingMaskAverage]])
+
+    cv2.imshow("stack 2", stack2)
 
     return (imgHSV, openingMask, openingMaskRes, colorContour)
-
-
 
 
 def empty(a):
@@ -247,11 +331,9 @@ def InitializeWindows():
     cv2.createTrackbar("Val Max", "Trackbars", 255, 255, empty)
 
 
-
-
 def drawContours(img, imgContour, imgCanvas):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    #print("\n!!!!!!!!!!!!!!!!!!!!start of img!!!!!!!!!!!!:\n")
+
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > 20:  # to discard small random lines
@@ -265,7 +347,6 @@ def drawContours(img, imgContour, imgCanvas):
             #print("approx: ", approx)
             cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 9)
             cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 9)
-
 
 
 def deleteBackground(img):
@@ -292,7 +373,6 @@ def deleteBackground(img):
     cv2.imshow("background black", result)
 
 
-
 def compare_average_and_dominant_colors(img):
 
     scale_percent = 60  # percent of original size
@@ -302,6 +382,8 @@ def compare_average_and_dominant_colors(img):
 
     # resize image
     resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
+    cv2.imshow("resized imaged", resized)
 
     print('Resized Dimensions : ', resized.shape)
 
@@ -328,8 +410,6 @@ def compare_average_and_dominant_colors(img):
 
     #print("dominant: " , dominant)
     #print("average : ", average)
-
-
 
 
 def distanceTransform(binary):
@@ -394,8 +474,6 @@ def feature_2_func(img):
 
     return newImg
 
-
-
 def stackImages(scale,imgArray):
     rows = len(imgArray)
     cols = len(imgArray[0])
@@ -426,10 +504,6 @@ def stackImages(scale,imgArray):
         hor= np.hstack(imgArray)
         ver = hor
     return ver
-
-
-
-
 
 if __name__ == "__main__":
     main()
