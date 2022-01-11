@@ -18,14 +18,14 @@ def histogram(img):
     plt.plot(hist_v, color='b', label="v")
 
     flatten_list = list(chain.from_iterable(s.tolist()))
-    countIndexDict = []
+    count_index_dict = []
     y = []
     x = []
     for i in range(256):
-        countIndex = flatten_list.count(i)
-        y.append(countIndex)
+        count_index = flatten_list.count(i)
+        y.append(count_index)
         x.append(i)
-        countIndexDict.append([len(countIndexDict), i, countIndex])
+        count_index_dict.append([len(count_index_dict), i, count_index])
 
     yhat = savgol_filter(y, 51, 3)  # type: np.ndarray
     plt.plot(x, yhat, color='black', label="smooth s green")
@@ -37,8 +37,7 @@ def histogram(img):
                 and yhat.tolist()[i + 1] > yhat.tolist()[i]):
             s_local_min = i
 
-    plt.title(
-        f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{hist_s.argmax()}, sMin:{s_local_min}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
+    plt.title(f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{hist_s.argmax()}, sMin:{s_local_min}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
 
     # splot  = sns.distplot(a=h, color='r', label="h", hist=False, kde=True,
     #             kde_kws={'shade': True, 'linewidth': 3})
@@ -55,7 +54,7 @@ def histogram(img):
 
 # Gets rgb image and returns it without background
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
-def hsvDifferentiation(img, is_histogram, set_manually):
+def hsv_differentiation(img, is_histogram, set_manually):
     # Color
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
