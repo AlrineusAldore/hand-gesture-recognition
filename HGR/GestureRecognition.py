@@ -113,8 +113,7 @@ def histogram(img):
         and yhat.tolist()[i + 1] > yhat.tolist()[i]):
          s_local_min = i
 
-    plt.title(
-        f"{hist_h.argmax()}, {hist_h.argmin()}, {hist_s.argmax()}, {s_local_min}, {hist_v.argmax()}, {hist_v.argmin()}")
+    plt.title(f"{hist_h.argmax()}, {hist_h.argmin()}, {hist_s.argmax()}, {s_local_min}, {hist_v.argmax()}, {hist_v.argmin()}")
     plt.show()
 
     splot  = sns.distplot(a=h, color='r', label="h", hist=False, kde=True,
@@ -129,6 +128,61 @@ def histogram(img):
     plt.title("smoothed histogram")
     plt.show()
     return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), s_local_min, hist_v.argmax(), hist_v.argmin()
+
+
+def findFingers(img):
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    count = 0
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > 20:  # to discard small random lines
+            cv2.drawContours(img, cnt, -1, 100, 2)
+            count += 1
+
+    cv2.putText(img, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+
+
+def getCircle(imgTransformed):
+    h = imgTransformed.shape[0]
+    w = imgTransformed.shape[1]
+
+    thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
+
+    center = 0,0
+
+    breakNestedLoop = False
+    for y in range(0, h):
+        for x in range(0, w):
+            if centerImg[y,x] != 0:
+                center = x,y
+                breakNestedLoop = True
+                break
+        if breakNestedLoop:
+            break
+
+    crop, r = autoCropBinImg(imgTransformed)
+    print("radius:", r)
+    circle = cv2.circle(centerImg, center, r, 255, -1)
+
+    return circle
+
+
+def autoCropBinImg(bin):
+    white_pt_coords=np.argwhere(bin)
+
+    crop = bin  #in case bin is completely black
+
+    if cv2.countNonZero(bin) != 0:
+        min_y = min(white_pt_coords[:,0])
+        min_x = min(white_pt_coords[:,1])
+        max_y = max(white_pt_coords[:,0])
+        max_x = max(white_pt_coords[:,1])
+
+        r = int(min([max_y - min_y, max_x - min_x]) // 2)
+
+        crop = bin[min_y:max_y,min_x:max_x]
+
+    return crop, r
 
 
 def slow(imgTransformed):
