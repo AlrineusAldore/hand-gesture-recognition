@@ -9,14 +9,36 @@ class Frame():
         self.lst = lst
         self.size = size
         self.count = len(lst)
+        self.img_stack = None
 
-        self.organize()
+        self.organize(size)
+
+    def organize(self, *size):
+        tot_size = size[0]*size[1]
+        #
+        if tot_size >= len(self.lst):
+            self.img_stack = []
+            temp = []
+            for i in range(size[0]):
+                for j in range(size[1]):
+                    temp.append(self.lst[i*size[0] + j])
+        else:
+            self.auto_organize()
 
 
-    def organize(self):
+
+
+
+    def auto_organize(self):
         root = math.sqrt(self.count)
+        rem = root % 1
 
-        
+        if rem != 0:
+            if rem >= 0.5:
+                root = math.ceil(root)
+            else:
+                root = round(root)
+
 
 
     def stack(self, scale, imgArray):
