@@ -9,11 +9,13 @@ import cython
 
 
 VID_NAME = "Videos\\handGesturesVid.mp4"
-SET_VALUES_MANUALLY = True
+SET_VALUES_MANUALLY = False
+
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(VID_NAME)
     n = 0
+    plt.ion()
 
     if SET_VALUES_MANUALLY:
         InitializeWindows()
@@ -54,8 +56,9 @@ def main():
         drawContours(imgEdge, imgContours, imgCanvas)
 
         #avarage color
-        imgHsv, readyBinary, readyImg, readyContour = hsvDifferentiation(img)
-
+        imgHsv, readyBinary, readyImg, readyContour = hsvDifferentiation(img, False)
+        stackHisto = stackImages(0.7, [[imgHsv, readyBinary, readyImg, readyContour],
+                                       list(hsvDifferentiation(img, True))])
         #find_max_color(img)
 
         imgTransformed = distanceTransform(readyBinary)
@@ -79,6 +82,7 @@ def main():
 
 
         cv2.imshow("stack", stack)
+        #cv2.imshow("stack", stackHisto)
         #cv2.imshow("hi2", autoCropBinImg(imgTransformed))
         #cv2.waitKey(0)
 
@@ -91,7 +95,9 @@ def main():
             break
 
 
+figure, axis = plt.subplots(2) #temporarily here
 def histogram(img):
+
     b, g, r = img[:, :, 0], img[:, :, 1], img[:, :, 2]
     hist_b = cv2.calcHist([b], [0], None, [256], [0, 256])
     hist_g = cv2.calcHist([g], [0], None, [256], [0, 256])
@@ -100,23 +106,25 @@ def histogram(img):
     #sns.histplot(hist_b, color="blue", label="100% Equities", kde=True, stat="density", linewidth=256)
     #sns.histplot(hist_g, color="green", label="100% Equities", kde=True, stat="density", linewidth=256)
     #sns.histplot(hist_r, color="red", label="100% Equities", kde=True, stat="density", linewidth=256)
-    plt.plot(hist_r, color='r', label="r")
-    plt.plot(hist_g, color='g', label="g")
-    plt.plot(hist_b, color='b', label="b")
-    plt.legend()
-    plt.show()
+    axis[0].cla()
+    axis[0].plot(hist_r, color='r', label="r")
+    axis[0].plot(hist_g, color='g', label="g")
+    axis[0].plot(hist_b, color='b', label="b")
+    axis[0].legend()
+    plt.pause(0.001)
 
     img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h, s, v = img2[:, :, 0], img2[:, :, 1], img2[:, :, 2]
     hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
     hist_s = cv2.calcHist([s], [0], None, [256], [0, 256])
     hist_v = cv2.calcHist([v], [0], None, [256], [0, 256])
-    plt.plot(hist_h, color='r', label="h")
-    plt.plot(hist_s, color='g', label="s")
-    plt.plot(hist_v, color='b', label="v")
-    plt.legend()
+    axis[1].cla()
+    axis[1].plot(hist_h, color='r', label="h")
+    axis[1].plot(hist_s, color='g', label="s")
+    axis[1].plot(hist_v, color='b', label="v")
+    axis[1].legend()
     plt.title(f"{hist_h.argmax()}, {hist_h.argmin()}, {hist_s.argmax()}, {hist_s.argmin()}, {hist_v.argmax()}, {hist_v.argmin()}")
-    plt.show()
+    plt.pause(0.001)
 
     return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), hist_s.argmin(), hist_v.argmax(), hist_v.argmin()
 
@@ -182,10 +190,10 @@ def find_max_color(img):
     LENGTH = 16
     WIDTH = 16
     HEIGHT = 16
-    bins = [LENGTH, WIDTH, HEIGHT];
+    bins = [LENGTH, WIDTH, HEIGHT]
 
     # Range of bins
-    ranges = [0, 256, 0, 256, 0, 256];
+    ranges = [0, 256, 0, 256, 0, 256]
     # Array of Image
     images = [img]
     # Number of channels
@@ -214,12 +222,13 @@ def find_max_color(img):
 
     cv2.imshow("stack 3", stack3)
 
-def hsvDifferentiation(img):
+
+def hsvDifferentiation(img, isHistogram):
     # Color
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # histogram
-    h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
+
 
     # HSV
     h1Min = 0
@@ -230,6 +239,9 @@ def hsvDifferentiation(img):
     vMax = 255
     h2Min = h1Min
     h2Max = h1Max
+
+    if isHistogram:
+        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
 
     # HSV
     if SET_VALUES_MANUALLY:
@@ -301,11 +313,11 @@ def hsvDifferentiation(img):
     openingMaskAverage = img.copy()
     openingMaskAverage[:] = (average[0], average[1], average[2])
 
-    stack2 = stackImages(0.9, [[bothMasks, bothMasksRes, bothMasksAverage],
+    stack2 = stackImages(0.8, [[bothMasks, bothMasksRes, bothMasksAverage],
                                [closingMask, closingMaskRes, closingMaskAverage],
                                [openingMask, openingMaskRes, openingMaskAverage]])
 
-    cv2.imshow("stack 2", stack2)
+    #cv2.imshow("stack 2", stack2)
 
     return (imgHSV, openingMask, openingMaskRes, colorContour)
 
@@ -444,6 +456,11 @@ def feature_2_func(img):
 
     #contors
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if contours == ():
+        print("tuple empty!")
+        return newImg
+    else:
+        print("conours:", contours)
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(newImg, [contours], -1, (255, 255, 0), 2)
 
