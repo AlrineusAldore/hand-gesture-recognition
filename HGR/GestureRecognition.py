@@ -1,4 +1,5 @@
 import segmentation.segmentation as sgm
+import frame.frame as fr
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,8 +34,11 @@ def main():
         if n % 10 != 0:
             continue
 
+        frame = fr.Frame()
+
         img = img[160:490, 0:330]
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
+        frame.append(img)
 
         # Different imgs types
         blankImg = img.copy()
@@ -49,9 +53,9 @@ def main():
         drawContours(imgEdge, imgContours, imgCanvas)
 
         # avarage color
-        imgHsv, readyBinary, readyImg = sgm.hsvDifferentiation(img, False, SET_VALUES_MANUALLY)
-        stackHisto = stackImages(2, [[imgHsv, readyBinary, readyImg],
-                                       list(sgm.hsvDifferentiation(img, True, SET_VALUES_MANUALLY))])
+        imgHsv, readyBinary, readyImg = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
+        #stackHisto = stackImages(2, [[imgHsv, readyBinary, readyImg], list(sgm.hsv_differentiation(img, True, False))])
+
         # sgm.find_max_color(img)
 
         img_transformed = distanceTransform(readyBinary)
@@ -59,23 +63,31 @@ def main():
         contourImg = feature_2_func(readyImg)
         # compare_average_and_dominant_colors(contourImg)
 
-        thresh, skeleton = cv2.threshold(img_transformed, 1, 255, cv2.THRESH_BINARY)
+        #Find the center of the hand from the distance transformation
+        thresh, centerImg = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
+
+        circle = getCircle(img_transformed)
+
+        fingers = cv2.subtract(readyBinary, circle, mask=None)
+        findFingers(fingers)
+
 
         stack = stackImages(1.5, [[img, contourImg, imgGray, imgBinary],
-                                  [imgBlur, imgEdge, imgContours, imgCanvas],
+                                  [img_transformed, centerImg, circle ,fingers],
                                   [imgHsv, readyBinary, readyImg, img]])
 
-        #cv2.imshow("stack", stack)
-        cv2.imshow("stack", stackHisto)
+        cv2.imshow("stack", stack)
+
+        #cv2.imshow("stack", stackHisto)
         # cv2.imshow("hi2", autoCropBinImg(imgTransformed))
         # cv2.waitKey(0)
 
         # plt.imshow(stack)
         # plt.show()
 
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-        #    cv2.destroyAllWindows()
-        #    break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            break
 
 
 
@@ -110,7 +122,7 @@ def getCircle(imgTransformed):
             break
 
     crop, r = autoCropBinImg(imgTransformed)
-    print("radius:", r)
+    #print("radius:", r)
     circle = cv2.circle(centerImg, center, r, 255, -1)
 
     return circle
@@ -256,9 +268,18 @@ def compare_average_and_dominant_colors(img):
 def distanceTransform(binary):
     dist = cv2.distanceTransform(binary, cv2.DIST_L2, 3)
 
-    transformed = cv2.normalize(src=dist, dst=dist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    normalized = cv2.normalize(src=dist, dst=dist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    transformed = (normalized*255).astype(np.uint8)
+    #for arr in normalized:
+    #    transformed.append((arr*255).astype(int))
+
+    #print("dist: \n",dist, "\n\n\n\n\n")
+    #print("transformed: \n",transformed, "\n\n\n\n\n")
+    #print("normalized: \n",normalized, "\n\n\n\n\n")
 
     return transformed
+
 
 
 def feature_2_func(img):

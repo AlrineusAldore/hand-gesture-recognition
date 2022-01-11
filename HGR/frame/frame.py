@@ -5,24 +5,29 @@ import math
 
 class Frame():
     def __init__(self, lst=None, size=(1,1)):
+        if lst is None:
+            lst = []
         self.lst = lst
         self.size = size
-        self.count = len(lst)
         self.img_stack = None
 
-        self.organize(size[0], size[1])
+        self.organize(size)
 
 
-    def organize(self, rows, cols):
-        tot_size = rows*cols
-        #
-        if tot_size >= len(self.lst):
+    def organize(self, size):
+        if len(self.lst) == 0:
+            return
+        rows = size[0]
+        cols = size[1]
+
+        if rows*cols >= len(self.lst):
             self.img_stack = []
             temp = []
             for i in range(rows):
                 for j in range(cols):
                     temp.append(self.lst[i*rows + j])
                 self.img_stack.append(temp)
+            self.size = (rows, cols)
         else:
             self.auto_organize()
 
@@ -30,7 +35,7 @@ class Frame():
     # Automatically organizes stack as approximately sqrt(len)*sqrt(len)
     def auto_organize(self):
         #Get root of length and fractional digits
-        rows = math.sqrt(self.count)
+        rows = math.sqrt(len(self.lst))
         rem = rows % 1
         cols = rows
 
@@ -45,7 +50,18 @@ class Frame():
             else:
                 cols = rows+1
 
-        self.organize(rows, cols)
+        self.organize((rows, cols))
+
+    # Appends a new img to the list
+    def append(self, img):
+        self.lst.append(img)
+        self.organize(self.size)
+
+
+    # Resizes frame stack
+    def resize(self, size):
+        if self.lst is not None:
+            self.organize(size)
 
 
     #turns the img_stack into an actual stack of imgs with size of scale
