@@ -1,5 +1,6 @@
 import segmentation.segmentation as sgm
 import frame.frame as fr
+import helpers
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ def main():
     plt.ion()
 
     if SET_VALUES_MANUALLY:
-        InitializeWindows()
+        helpers.InitializeWindows()
 
 
     while cap.isOpened():
@@ -90,7 +91,7 @@ def main():
             break
 
 
-
+#fingers
 def findFingers(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     count = 0
@@ -103,6 +104,7 @@ def findFingers(img):
     cv2.putText(img, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
 
 
+#fingers
 def getCircle(imgTransformed):
     h = imgTransformed.shape[0]
     w = imgTransformed.shape[1]
@@ -128,6 +130,7 @@ def getCircle(imgTransformed):
     return circle
 
 
+#helpers
 def autoCropBinImg(bin):
     white_pt_coords = np.argwhere(bin)
 
@@ -146,6 +149,7 @@ def autoCropBinImg(bin):
     return crop, r
 
 
+#helpers/none
 def slow(imgTransformed):
     h = imgTransformed.shape[0]
     w = imgTransformed.shape[1]
@@ -162,29 +166,7 @@ def slow(imgTransformed):
     return skeleton
 
 
-
-
-def empty(a):
-    pass
-
-
-def InitializeWindows():
-    # Trackbar
-    # hue: 0-30 && 160-179
-    # sat: 10-70 || 10-100
-    # val: 90-255 || 0-255
-    cv2.namedWindow("Trackbars")
-    cv2.resizeWindow("Trackbars", 640, 380)
-    cv2.createTrackbar("Hue1 Min", "Trackbars", 0, 179, empty)
-    cv2.createTrackbar("Hue1 Max", "Trackbars", 14, 179, empty)
-    cv2.createTrackbar("Hue2 Min", "Trackbars", 179, 179, empty)
-    cv2.createTrackbar("Hue2 Max", "Trackbars", 179, 179, empty)
-    cv2.createTrackbar("Sat Min", "Trackbars", 80, 255, empty)
-    cv2.createTrackbar("Sat Max", "Trackbars", 255, 255, empty)
-    cv2.createTrackbar("Val Min", "Trackbars", 0, 179, empty)
-    cv2.createTrackbar("Val Max", "Trackbars", 255, 255, empty)
-
-
+#helpers
 def drawContours(img, imgContour, imgCanvas):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -203,67 +185,6 @@ def drawContours(img, imgContour, imgCanvas):
             cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
 
 
-def deleteBackground(img):
-    hh, ww = img.shape[:2]
-
-    # threshold on white
-    # Define lower and uppper limits
-    lower = np.array([250, 250, 250])
-    upper = np.array([255, 255, 255])
-
-    # Create mask to only select black
-    thresh = cv2.inRange(img, lower, upper)
-
-    # apply morphology
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))
-    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-
-    # invert morp image
-    mask = 255 - morph
-
-    # apply mask to image
-    result = cv2.bitwise_and(img, img, mask=mask)
-
-    cv2.imshow("background black", result)
-
-
-def compare_average_and_dominant_colors(img):
-    scale_percent = 60  # percent of original size
-    width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
-    dim = (width, height)
-
-    # resize image
-    resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-
-    cv2.imshow("resized imaged", resized)
-
-    print('Resized Dimensions : ', resized.shape)
-
-    average = img.mean(axis=0).mean(axis=0)
-    pixels = np.float32(img.reshape(-1, 3))
-
-    n_colors = 5
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
-    flags = cv2.KMEANS_RANDOM_CENTERS
-
-    _, labels, palette = cv2.kmeans(pixels, n_colors, None, criteria, 10, flags)
-    _, counts = np.unique(labels, return_counts=True)
-    dominant = palette[np.argmax(counts)]
-
-    # Makes a new image for average color
-    imgAverage = img.copy()
-    imgAverage[:] = average
-    cv2.imshow("average", cv2.resize(imgAverage, None, fx=2, fy=2, interpolation=cv2.INTER_AREA))
-
-    # Makes a new image for dominant color
-    imgDom = img.copy()
-    imgDom[:] = dominant
-    cv2.imshow("dominant", cv2.resize(imgDom, None, fx=2, fy=2, interpolation=cv2.INTER_AREA))
-
-    # print("dominant: " , dominant)
-    # print("average : ", average)
-
 
 def distanceTransform(binary):
     dist = cv2.distanceTransform(binary, cv2.DIST_L2, 3)
@@ -281,7 +202,7 @@ def distanceTransform(binary):
     return transformed
 
 
-
+#points
 def feature_2_func(img):
     # make a vid 256-500
     newImg = img.copy()
@@ -300,17 +221,18 @@ def feature_2_func(img):
         print("tuple empty!")
         return newImg
     contours = max(contours, key=lambda x: cv2.contourArea(x))
-    cv2.drawContours(newImg, [contours], -1, (255, 255, 0), 2)
+    cv2.drawContours(newImg, [contours], -1, (255, 255, 0), 1)
 
     # hull (the yellow line)
     hull = cv2.convexHull(contours)
-    cv2.drawContours(newImg, [hull], -1, (0, 255, 255), 2)
+    cv2.drawContours(newImg, [hull], -1, (0, 255, 255), 1)
 
     # claculate the angle
     hull = cv2.convexHull(contours, returnPoints=False)
     defects = cv2.convexityDefects(contours, hull)
-    if defects is not None:
-        cnt = 0
+    if defects is None:
+        return
+    cnt = 0
     for i in range(defects.shape[0]):  # calculate the angle
         s, e, f, d = defects[i][0]
         start = tuple(contours[s][0])
@@ -322,10 +244,10 @@ def feature_2_func(img):
         angle = np.arccos((b ** 2 + c ** 2 - a ** 2) / (2 * b * c))  # cosine theorem
         if angle <= np.pi / 2:  # angle less than 90 degree, treat as fingers
             cnt += 1
-            cv2.circle(newImg, far, 4, [0, 0, 255], -1)
+            cv2.circle(newImg, far, 2, [0, 0, 255], -1)
     if cnt > 0:
         cnt = cnt + 1
-    cv2.putText(newImg, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(newImg, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
 
     return newImg
 
