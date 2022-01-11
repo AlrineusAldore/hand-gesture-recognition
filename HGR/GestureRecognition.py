@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
-from scipy.signal import argrelextrema
-import seaborn as sns
 from itertools import chain
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
-import cython
+
+# import cython
+# from scipy.signal import argrelextrema
+# import seaborn as sns
 
 VID_NAME = "Videos\\handGesturesVid.mp4"
 SET_VALUES_MANUALLY = False
@@ -14,9 +15,12 @@ SET_VALUES_MANUALLY = False
 def main():
     cap = cv2.VideoCapture(VID_NAME)
     n = 0
+    plt.show()
     plt.ion()
 
-    # InitializeWindows()
+    if SET_VALUES_MANUALLY:
+        InitializeWindows()
+
 
     while cap.isOpened():
 
@@ -33,7 +37,7 @@ def main():
             continue
 
         img = img[160:490, 0:330]
-        resizedImg = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
 
         # Different imgs types
         blankImg = img.copy()
@@ -47,37 +51,36 @@ def main():
         imgContours = img.copy()
         drawContours(imgEdge, imgContours, imgCanvas)
 
-        #avarage color
+        # avarage color
         imgHsv, readyBinary, readyImg, readyContour = hsvDifferentiation(img, False)
-        stackHisto = stackImages(0.7, [[imgHsv, readyBinary, readyImg, readyContour],
+        stackHisto = stackImages(2, [[imgHsv, readyBinary, readyImg, readyContour],
                                        list(hsvDifferentiation(img, True))])
-        #find_max_color(img)
+        # find_max_color(img)
 
         # find_max_color(img)
 
-        imgTransformed = distanceTransform(readyBinary)
+        img_transformed = distanceTransform(readyBinary)
 
         contourImg = feature_2_func(readyImg)
-        #compare_average_and_dominant_colors(contourImg)
+        # compare_average_and_dominant_colors(contourImg)
 
-        thresh, skeleton = cv2.threshold(imgTransformed, 1, 255, cv2.THRESH_BINARY)
+        thresh, skeleton = cv2.threshold(img_transformed, 1, 255, cv2.THRESH_BINARY)
 
-        stack = stackImages(0.6, [[img, contourImg, imgGray, imgBinary],
+        stack = stackImages(1.5, [[img, contourImg, imgGray, imgBinary],
                                   [imgBlur, imgEdge, imgContours, imgCanvas],
                                   [imgHsv, readyBinary, readyImg, readyContour]])
 
-        cv2.imshow("stack", stack)
-        #cv2.imshow("stack", stackHisto)
-        #cv2.imshow("hi2", autoCropBinImg(imgTransformed))
-        #cv2.waitKey(0)
+        #cv2.imshow("stack", stack)
+        cv2.imshow("stack", stackHisto)
+        # cv2.imshow("hi2", autoCropBinImg(imgTransformed))
+        # cv2.waitKey(0)
 
+        # plt.imshow(stack)
+        # plt.show()
 
-        #plt.imshow(stack)
-        #plt.show()
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            break
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    cv2.destroyAllWindows()
+        #    break
 
 
 def histogram(img):
@@ -87,10 +90,10 @@ def histogram(img):
     hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
     hist_s = cv2.calcHist([s], [0], None, [256], [0, 256])
     hist_v = cv2.calcHist([v], [0], None, [256], [0, 256])
+    plt.cla()
     plt.plot(hist_h, color='r', label="h")
     plt.plot(hist_s, color='g', label="s")
     plt.plot(hist_v, color='b', label="v")
-
 
     flatten_list = list(chain.from_iterable(s.tolist()))
     countIndexDict = []
@@ -102,31 +105,29 @@ def histogram(img):
         x.append(i)
         countIndexDict.append([len(countIndexDict), i, countIndex])
 
-
-    yhat = savgol_filter(y, 51, 3)
+    yhat = savgol_filter(y, 51, 3)  # type: np.ndarray
     plt.plot(x, yhat, color='black', label="smooth s green")
     s_local_min = 0
     for i in range(len(yhat)):
-      #print(i, yhat.tolist()[i])
-      if (i < len(yhat)-1
-        and yhat.tolist()[i] > 0 and yhat.tolist()[i - 1] > yhat.tolist()[i]
-        and yhat.tolist()[i + 1] > yhat.tolist()[i]):
-         s_local_min = i
+        # print(i, yhat.tolist()[i])
+        if (i < len(yhat) - 1
+                and yhat.tolist()[i] > 0 and yhat.tolist()[i - 1] > yhat.tolist()[i]
+                and yhat.tolist()[i + 1] > yhat.tolist()[i]):
+            s_local_min = i
 
-    plt.title(f"{hist_h.argmax()}, {hist_h.argmin()}, {hist_s.argmax()}, {s_local_min}, {hist_v.argmax()}, {hist_v.argmin()}")
-    plt.show()
+    plt.title(
+        f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{hist_s.argmax()}, sMin:{s_local_min}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
 
-    splot  = sns.distplot(a=h, color='r', label="h", hist=False, kde=True,
-                 kde_kws={'shade': True, 'linewidth': 3})
-    sns.distplot(a=s, color='g', label="s", hist=False, kde=True,
-                 kde_kws={'shade': True, 'linewidth': 3})
-    sns.distplot(a=v, color='b', label="v", hist=False, kde=True,
-                 kde_kws={'shade': True, 'linewidth': 3})
+    # splot  = sns.distplot(a=h, color='r', label="h", hist=False, kde=True,
+    #             kde_kws={'shade': True, 'linewidth': 3})
+    # sns.distplot(a=s, color='g', label="s", hist=False, kde=True,
+    #             kde_kws={'shade': True, 'linewidth': 3})
+    # sns.distplot(a=v, color='b', label="v", hist=False, kde=True,
+    #             kde_kws={'shade': True, 'linewidth': 3})
 
-    [h.get_height() for h in splot.patches]
+    # [h.get_height() for h in splot.patches]
     plt.legend()
-    plt.title("smoothed histogram")
-    plt.show()
+    plt.pause(0.001)
     return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), s_local_min, hist_v.argmax(), hist_v.argmin()
 
 
@@ -148,13 +149,13 @@ def getCircle(imgTransformed):
 
     thresh, centerImg = cv2.threshold(imgTransformed, 253, 255, cv2.THRESH_BINARY)
 
-    center = 0,0
+    center = 0, 0
 
     breakNestedLoop = False
     for y in range(0, h):
         for x in range(0, w):
-            if centerImg[y,x] != 0:
-                center = x,y
+            if centerImg[y, x] != 0:
+                center = x, y
                 breakNestedLoop = True
                 break
         if breakNestedLoop:
@@ -168,19 +169,19 @@ def getCircle(imgTransformed):
 
 
 def autoCropBinImg(bin):
-    white_pt_coords=np.argwhere(bin)
+    white_pt_coords = np.argwhere(bin)
 
-    crop = bin  #in case bin is completely black
+    crop = bin  # in case bin is completely black
 
     if cv2.countNonZero(bin) != 0:
-        min_y = min(white_pt_coords[:,0])
-        min_x = min(white_pt_coords[:,1])
-        max_y = max(white_pt_coords[:,0])
-        max_x = max(white_pt_coords[:,1])
+        min_y = min(white_pt_coords[:, 0])
+        min_x = min(white_pt_coords[:, 1])
+        max_y = max(white_pt_coords[:, 0])
+        max_x = max(white_pt_coords[:, 1])
 
         r = int(min([max_y - min_y, max_x - min_x]) // 2)
 
-        crop = bin[min_y:max_y,min_x:max_x]
+        crop = bin[min_y:max_y, min_x:max_x]
 
     return crop, r
 
@@ -200,43 +201,6 @@ def slow(imgTransformed):
 
     return skeleton
 
-
-def find_max_color(img):
-    # Number of bins
-    LENGTH = 16
-    WIDTH = 16
-    HEIGHT = 16
-    bins = [LENGTH, WIDTH, HEIGHT];
-
-    # Range of bins
-    ranges = [0, 256, 0, 256, 0, 256];
-    # Array of Image
-    images = [img]
-    # Number of channels
-    channels = [0, 1, 2]
-
-    # Calculate the Histogram
-    hist = cv2.calcHist(images, channels, None, bins, ranges)
-
-    # sortedIndex contains the indexes the
-    sortedIndex = np.argsort(hist.flatten())
-
-    # 1-D index of the max color in histogram
-    index = sortedIndex[-1]
-
-    # Getting the 3-D index from the 1-D index
-    k = index / (WIDTH * HEIGHT)
-    j = (index % (WIDTH * HEIGHT)) / WIDTH
-    i = index - j * WIDTH - k * WIDTH * HEIGHT
-
-    # Print the max RGB Value
-    print("Max RGB Value is = ", [i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH])
-    maxColor = img.copy()
-    maxColor[:] = (i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH)
-
-    stack3 = stackImages(0.2, [maxColor, img])
-
-    cv2.imshow("stack 3", stack3)
 
 def find_max_color(img):
     # Number of bins
@@ -282,19 +246,29 @@ def hsvDifferentiation(img, isHistogram):
 
     # histogram
 
-
     # HSV
     h1Min = 0
-    sMin = 80
-    vMin = 0
     h1Max = 179
+    sMin = 80
     sMax = 255
+    vMin = 0
     vMax = 255
     h2Min = h1Min
     h2Max = h1Max
 
     if isHistogram:
-        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
+        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(imgHSV)
+
+    if SET_VALUES_MANUALLY and not isHistogram:
+        h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")
+        h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")
+        h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")
+        h2Max = cv2.getTrackbarPos("Hue2 Max", "Trackbars")
+        sMin = cv2.getTrackbarPos("Sat Min", "Trackbars")
+        sMax = cv2.getTrackbarPos("Sat Max", "Trackbars")
+        vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
+        vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
+
 
     # HSV
     lower = np.array([h1Min, sMin, vMin])
@@ -319,8 +293,8 @@ def hsvDifferentiation(img, isHistogram):
     guassianMaskRes = cv2.bitwise_and(img, img, mask=guassianMask)
 
     # closing
-    closingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 7))
-    openingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
+    closingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 4))
+    openingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     closingMask = cv2.morphologyEx(bothMasks, cv2.MORPH_CLOSE, closingKernel)
     closingMaskRes = cv2.bitwise_and(img, img, mask=closingMask)
 
@@ -358,7 +332,7 @@ def hsvDifferentiation(img, isHistogram):
                                [closingMask, closingMaskRes, closingMaskAverage],
                                [openingMask, openingMaskRes, openingMaskAverage]])
 
-    #cv2.imshow("stack 2", stack2)
+    # cv2.imshow("stack 2", stack2)
 
     return (imgHSV, openingMask, openingMaskRes, colorContour)
 
@@ -392,14 +366,14 @@ def drawContours(img, imgContour, imgCanvas):
         if area > 20:  # to discard small random lines
             # print("cuntour: ", cnt)
             # print('area: ', area)
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 5)
-            cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 5)
+            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
+            cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 2)
 
             peri = cv2.arcLength(cnt, True)  # perimeter
             approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
             # print("approx: ", approx)
-            cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 9)
-            cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 9)
+            cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 3)
+            cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
 
 
 def deleteBackground(img):
@@ -460,8 +434,8 @@ def compare_average_and_dominant_colors(img):
     imgDom[:] = dominant
     cv2.imshow("dominant", cv2.resize(imgDom, None, fx=2, fy=2, interpolation=cv2.INTER_AREA))
 
-    #print("dominant: " , dominant)
-    #print("average : ", average)
+    # print("dominant: " , dominant)
+    # print("average : ", average)
 
 
 def distanceTransform(binary):
@@ -489,8 +463,6 @@ def feature_2_func(img):
     if contours == ():
         print("tuple empty!")
         return newImg
-    else:
-        print("conours:", contours)
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(newImg, [contours], -1, (255, 255, 0), 2)
 
