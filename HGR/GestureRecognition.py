@@ -257,7 +257,7 @@ def hsvDifferentiation(img, isHistogram):
     h2Max = h1Max
 
     if isHistogram:
-        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(imgHSV)
+        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
 
     if SET_VALUES_MANUALLY and not isHistogram:
         h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")

@@ -4,8 +4,7 @@ import math
 
 
 class Frame():
-    def __init__(self, lst=None ,img=None, size=(1,1)):
-        self.img = img
+    def __init__(self, lst=None, size=(1,1)):
         self.lst = lst
         self.size = size
         self.count = len(lst)
