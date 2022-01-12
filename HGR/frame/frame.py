@@ -22,10 +22,14 @@ class Frame():
 
         if rows*cols >= len(self.lst):
             self.img_stack = []
-            temp = []
             for i in range(rows):
+                temp = []
                 for j in range(cols):
-                    temp.append(self.lst[i*rows + j])
+                    # After lst runs out, start copying the first image to fill up space
+                    try:
+                        temp.append(self.lst[i*cols + j])
+                    except:
+                        temp.append(self.lst[0])
                 self.img_stack.append(temp)
             self.size = (rows, cols)
         else:
@@ -35,20 +39,22 @@ class Frame():
     # Automatically organizes stack as approximately sqrt(len)*sqrt(len)
     def auto_organize(self):
         #Get root of length and fractional digits
-        rows = math.sqrt(len(self.lst))
+        length = len(self.lst)
+        rows = math.sqrt(length)
         rem = rows % 1
-        cols = rows
 
         # If number whole, remain with root as rows & cols
-        # If not whole, then have root+1 as cols
-        # Rows are root+1 if rem >0.45, otherwise rows=root
+        # If not whole, then have root+1 as cols, and rows appropriately too
         if rem != 0:
-            rows = round(rows)
-            if rem > 0.45:
+            rows = int(rows)
+            if rows * (rows+1) < length:
                 rows += 1
                 cols = rows
             else:
                 cols = rows+1
+        else:
+            rows = math.ceil(rows)
+            cols = rows
 
         self.organize((rows, cols))
 
