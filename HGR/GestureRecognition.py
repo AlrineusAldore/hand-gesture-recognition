@@ -62,6 +62,7 @@ def main():
         img_transformed = distanceTransform(readyBinary)
 
         contourImg = feature_2_func(readyImg)
+        frame.append(contourImg)
         # compare_average_and_dominant_colors(contourImg)
 
         #Find the center of the hand from the distance transformation
@@ -72,10 +73,15 @@ def main():
         fingers = cv2.subtract(readyBinary, circle, mask=None)
         findFingers(fingers)
 
+        frame.lst += [imgGray, imgBinary]
+        frame.lst += [img_transformed, centerImg, circle ,fingers]
+        frame.lst += [imgHsv, readyBinary, readyImg]
+        frame.auto_organize()
 
-        stack = stackImages(1.5, [[img, contourImg, imgGray, imgBinary],
-                                  [img_transformed, centerImg, circle ,fingers],
-                                  [imgHsv, readyBinary, readyImg, img]])
+        #stack = stackImages(1.5, [[img, contourImg, imgGray, imgBinary],
+        #                          [img_transformed, centerImg, circle ,fingers],
+        #                          [imgHsv, readyBinary, readyImg, img]])
+        stack = frame.stack(1.5)
 
         cv2.imshow("stack", stack)
 
