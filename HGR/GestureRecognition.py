@@ -24,19 +24,32 @@ def main():
         helpers.InitializeWindows()
 
 
+    analyze_capture(VID_NAME, True)  # Analyzing a video
+    #analyze_capture(0, False)  # Analyzing camera
+
+
+
+# Fully analyzes a whole capture
+def analyze_capture(cap_path, pre_recorded):
+    cap = cv2.VideoCapture(cap_path)
+    n = 0
+
+    #loop forever
     while cap.isOpened():
 
         success, img = cap.read()
 
         # Reset video if it ends
         if not success:
-            cap = cv2.VideoCapture(VID_NAME)
+            cap = cv2.VideoCapture(cap_path)
             success, img = cap.read()
 
-        # skips 10 frames
-        n += 1
-        if n % 10 != 0:
-            continue
+        # skips 10 frames if not live
+        if pre_recorded:
+            n += 1
+            if n % 10 != 0:
+                continue
+            n = 0
 
         frame = fr.Frame()
 
@@ -60,13 +73,11 @@ def main():
         imgHsv, readyBinary, readyImg = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
         #stackHisto = stackImages(2, [[imgHsv, readyBinary, readyImg], list(sgm.hsv_differentiation(img, True, False))])
 
-        # sgm.find_max_color(img)
 
         img_transformed = general.distanceTransform(readyBinary)
 
         contourImg = pts.find_lower_points(readyImg)
         frame.append(contourImg)
-        # compare_average_and_dominant_colors(contourImg)
 
         #Find the center of the hand from the distance transformation
         thresh, centerImg = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
@@ -88,16 +99,13 @@ def main():
 
         cv2.imshow("stack", stack)
 
-        #cv2.imshow("stack", stackHisto)
-        # cv2.imshow("hi2", autoCropBinImg(imgTransformed))
         # cv2.waitKey(0)
 
-        # plt.imshow(stack)
-        # plt.show()
-
+        #if 'q' is pressed, close all windows and break loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
+
 
 
 
