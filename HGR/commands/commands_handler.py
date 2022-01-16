@@ -4,11 +4,11 @@ class CommandsHandler:
     def __init__(self):
         self.mouse_controlled = False
 
-    def sign_to_command(self, command):
+    def sign_to_command(self, sign):
         pass
 
 
-class Command(Enum):
+class Sign(Enum):
     index_only = "move_mouse"
     index_middle_closed = "double_click"
     index_middle_ring_closed = "right_click"
