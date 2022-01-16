@@ -8,5 +8,5 @@ class Hand:
 
 
         length = len(self.points)
-        for i in range(9-length):
+        for i in range(10-length):
             self.points.append(None)
