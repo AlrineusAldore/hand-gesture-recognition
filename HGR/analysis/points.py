@@ -17,7 +17,6 @@ def find_lower_points(img):
     # contors
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if contours == ():
-        print("tuple empty!")
         return newImg
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(newImg, [contours], -1, (255, 255, 0), 1)

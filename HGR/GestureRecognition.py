@@ -8,6 +8,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+#recist code
+
 # import cython
 
 VID_NAME = "Videos\\handGesturesVid.mp4"
@@ -15,8 +17,6 @@ SET_VALUES_MANUALLY = False
 
 
 def main():
-    cap = cv2.VideoCapture(VID_NAME)
-    n = 0
     plt.show()
     plt.ion()
 
@@ -24,8 +24,8 @@ def main():
         helpers.InitializeWindows()
 
 
-    analyze_capture(VID_NAME, True)  # Analyzing a video
-    #analyze_capture(0, False)  # Analyzing camera
+    #analyze_capture(VID_NAME, True)  # Analyzing a video
+    analyze_capture(0, True)  # Analyzing camera
 
 
 
@@ -45,9 +45,10 @@ def analyze_capture(cap_path, pre_recorded):
             success, img = cap.read()
 
         # skips 10 frames if not live
-        if pre_recorded:
+        if True:
             n += 1
             if n % 10 != 0:
+                success = cap.grab()
                 continue
             n = 0
 
@@ -71,7 +72,6 @@ def analyze_capture(cap_path, pre_recorded):
 
         # avarage color
         imgHsv, readyBinary, readyImg = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
-        #stackHisto = stackImages(2, [[imgHsv, readyBinary, readyImg], list(sgm.hsv_differentiation(img, True, False))])
 
 
         img_transformed = general.distanceTransform(readyBinary)
@@ -92,13 +92,13 @@ def analyze_capture(cap_path, pre_recorded):
         frame.lst += [imgHsv, readyBinary, readyImg]
         frame.auto_organize()
 
-        #stack = stackImages(1.5, [[img, contourImg, imgGray, imgBinary],
-        #                          [img_transformed, centerImg, circle ,fingers],
-        #                          [imgHsv, readyBinary, readyImg, img]])
+
         stack = frame.stack(1.5)
 
         cv2.imshow("stack", stack)
 
+        #histo = fr.Frame([imgHsv, readyBinary, readyImg] + list(sgm.hsv_differentiation(img, True, False)))
+        #cv2.imshow("histo", histo.stack(2))
         # cv2.waitKey(0)
 
         #if 'q' is pressed, close all windows and break loop
