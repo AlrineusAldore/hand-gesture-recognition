@@ -25,7 +25,7 @@ def main():
 
 
     analyze_capture(VID_NAME, False)  # Analyzing a video
-    #analyze_capture(0, True)  # Analyzing camera
+    #analyze_capture(0, False)  # Analyzing camera
 
 
 
@@ -48,7 +48,7 @@ def analyze_capture(cap_path, pre_recorded):
         if pre_recorded:
             n += 1
             if n % 10 != 0:
-                success = cap.grab()
+                cap.grab()
                 continue
             n = 0
 
@@ -58,38 +58,29 @@ def analyze_capture(cap_path, pre_recorded):
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
         frame.append(img)
 
-        # Different imgs types
-        blankImg = img.copy()
-        blankImg[:] = 0, 0, 0
-        imgBlur = cv2.GaussianBlur(img, (9, 9), 1)
-        imgGray = cv2.cvtColor(imgBlur, cv2.COLOR_BGR2GRAY)
-        (thresh, imgBinary) = cv2.threshold(imgGray, 255, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        blank_img = img.copy()
+        blank_img[:] = 0, 0, 0
 
-        imgEdge = cv2.Canny(imgBlur, 30, 30)
-        imgCanvas = blankImg.copy()
-        imgContours = img.copy()
-        helpers.drawContours(imgEdge, imgContours, imgCanvas)
-
-        # avarage color
-        imgHsv, readyBinary, readyImg = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
+        # Separate hand from background through hsv difference
+        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
 
 
-        img_transformed = general.distanceTransform(readyBinary)
+        img_transformed = general.distanceTransform(ready_binary)
 
-        contourImg = pts.find_lower_points(readyImg)
-        frame.append(contourImg)
+        lower_points_img = pts.find_lower_points(ready_img)
+        frame.append(lower_points_img)
 
-        #Find the center of the hand from the distance transformation
-        thresh, centerImg = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
+        # Find the center of the hand from the distance transformation
+        thresh, center_img = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
 
         circle = fings.getCircle(img_transformed)
 
-        fingers = cv2.subtract(readyBinary, circle, mask=None)
+        fingers = cv2.subtract(ready_binary, circle, mask=None)
         fingers = fings.findFingers(fingers)
 
-        frame.lst += [imgGray, imgBinary]
-        frame.lst += [img_transformed, centerImg, circle ,fingers]
-        frame.lst += [imgHsv, readyBinary, readyImg]
+
+        frame.lst += [img_transformed, center_img, circle, fingers]
+        frame.lst += [img_hsv, ready_binary, ready_img]
         frame.auto_organize()
 
 
@@ -97,7 +88,7 @@ def analyze_capture(cap_path, pre_recorded):
 
         cv2.imshow("stack", stack)
 
-        #histo = fr.Frame([imgHsv, readyBinary, readyImg] + list(sgm.hsv_differentiation(img, True, False)))
+        #histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
         #cv2.imshow("histo", histo.stack(2))
         #cv2.waitKey(0)
 
