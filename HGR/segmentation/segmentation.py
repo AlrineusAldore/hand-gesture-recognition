@@ -39,14 +39,6 @@ def histogram(img):
 
     plt.title(f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{hist_s.argmax()}, sMin:{s_local_min}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
 
-    # splot  = sns.distplot(a=h, color='r', label="h", hist=False, kde=True,
-    #             kde_kws={'shade': True, 'linewidth': 3})
-    # sns.distplot(a=s, color='g', label="s", hist=False, kde=True,
-    #             kde_kws={'shade': True, 'linewidth': 3})
-    # sns.distplot(a=v, color='b', label="v", hist=False, kde=True,
-    #             kde_kws={'shade': True, 'linewidth': 3})
-
-    # [h.get_height() for h in splot.patches]
     plt.legend()
     plt.pause(0.001)
     return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), s_local_min, hist_v.argmax(), hist_v.argmin()
@@ -56,7 +48,7 @@ def histogram(img):
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
 def hsv_differentiation(img, is_histogram, set_manually):
     # Color
-    imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # HSV
     h1Min = 0
@@ -89,57 +81,49 @@ def hsv_differentiation(img, is_histogram, set_manually):
     upper2 = np.array([h2Max, sMax, vMax])
 
     # nomral
-    imgMask = cv2.inRange(imgHSV, lower, upper)
-    imgMaskRes = cv2.bitwise_and(img, img, mask=imgMask)
+    img_mask = cv2.inRange(img_hsv, lower, upper)
+    imgMaskRes = cv2.bitwise_and(img, img, mask=img_mask)
     # mask 2
-    imgMask2 = cv2.inRange(imgHSV, lower2, upper2)
-    imgMask2Res = cv2.bitwise_and(img, img, mask=imgMask2)
+    img_mask2 = cv2.inRange(img_hsv, lower2, upper2)
+    imgMask2Res = cv2.bitwise_and(img, img, mask=img_mask2)
 
     # combined
-    bothMasks = cv2.bitwise_or(imgMask, imgMask2, mask=None)
-    bothMasksRes = cv2.bitwise_or(img, img, mask=bothMasks)
+    both_masks = cv2.bitwise_or(img_mask, img_mask2, mask=None)
+    both_masks_res = cv2.bitwise_or(img, img, mask=both_masks)
     # bothMasksRes2 = cv2.bitwise_or(imgMaskRes, imgMask2Res, mask=None)
 
     # guassian
-    guassianMask = cv2.GaussianBlur(bothMasks, (5, 5), cv2.BORDER_DEFAULT)
-    guassianMaskRes = cv2.bitwise_and(img, img, mask=guassianMask)
+    guassian_mask = cv2.GaussianBlur(both_masks, (5, 5), cv2.BORDER_DEFAULT)
+    guassianMaskRes = cv2.bitwise_and(img, img, mask=guassian_mask)
 
     # closing
-    closingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 4))
-    openingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    closingMask = cv2.morphologyEx(bothMasks, cv2.MORPH_CLOSE, closingKernel)
-    closingMaskRes = cv2.bitwise_and(img, img, mask=closingMask)
+    closing_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 4))
+    opening_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    closing_mask = cv2.morphologyEx(both_masks, cv2.MORPH_CLOSE, closing_kernel)
+    closing_mask_res = cv2.bitwise_and(img, img, mask=closing_mask)
 
     # opening
-    openingMask = cv2.morphologyEx(closingMask, cv2.MORPH_OPEN, openingKernel)
-    openingMaskRes = cv2.bitwise_and(img, img, mask=openingMask)
-
-    # Edges after color
-    grayColor = cv2.cvtColor(openingMaskRes, cv2.COLOR_BGR2GRAY)
-    ret, binaryColor = cv2.threshold(grayColor, 20, 255, cv2.THRESH_BINARY)
+    opening_mask = cv2.morphologyEx(closing_mask, cv2.MORPH_OPEN, opening_kernel)
+    opening_mask_res = cv2.bitwise_and(img, img, mask=opening_mask)
 
     # use the masks to get avarage color
-    average = cv2.mean(bothMasksRes, bothMasks)
+    average = cv2.mean(both_masks_res, both_masks)
     # Makes a new image for average color
-    bothMasksAverage = img.copy()
-    bothMasksAverage[:] = (average[0], average[1], average[2])
+    both_masks_average = img.copy()
+    both_masks_average[:] = (average[0], average[1], average[2])
 
     # use the masks to get avarage color
-    average = cv2.mean(closingMaskRes, closingMask)
-    closingMaskAverage = img.copy()
-    closingMaskAverage[:] = (average[0], average[1], average[2])
+    average = cv2.mean(closing_mask_res, closing_mask)
+    closing_mask_average = img.copy()
+    closing_mask_average[:] = (average[0], average[1], average[2])
 
     # use the masks to get avarage color
-    average = cv2.mean(openingMaskRes, openingMask)
-    openingMaskAverage = img.copy()
-    openingMaskAverage[:] = (average[0], average[1], average[2])
-
-    stack2 = [[bothMasks, bothMasksRes, bothMasksAverage],
-                               [closingMask, closingMaskRes, closingMaskAverage],
-                               [openingMask, openingMaskRes, openingMaskAverage]]
+    average = cv2.mean(opening_mask_res, opening_mask)
+    opening_mask_average = img.copy()
+    opening_mask_average[:] = (average[0], average[1], average[2])
 
 
-    return (imgHSV, openingMask, openingMaskRes)
+    return (img_hsv, opening_mask, opening_mask_res)
 
 
 
@@ -160,11 +144,11 @@ def find_max_color(img):
     # Calculate the Histogram
     hist = cv2.calcHist(images, channels, None, bins, ranges)
 
-    # sortedIndex contains the indexes the
-    sortedIndex = np.argsort(hist.flatten())
+    # sorted_index contains the indexes the
+    sorted_index = np.argsort(hist.flatten())
 
     # 1-D index of the max color in histogram
-    index = sortedIndex[-1]
+    index = sorted_index[-1]
 
     # Getting the 3-D index from the 1-D index
     k = index / (WIDTH * HEIGHT)
@@ -173,7 +157,7 @@ def find_max_color(img):
 
     # Print the max RGB Value
     print("Max RGB Value is = ", [i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH])
-    maxColor = img.copy()
-    maxColor[:] = (i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH)
+    max_color = img.copy()
+    max_color[:] = (i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH)
 
-    return maxColor
+    return max_color
