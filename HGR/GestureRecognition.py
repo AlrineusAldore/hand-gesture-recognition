@@ -2,6 +2,7 @@ import segmentation.segmentation as sgm
 import frame.frame as fr
 import analysis.fingers as fings
 import analysis.points as pts
+import analysis.mouth as mouth
 import analysis.general as general
 import helpers
 import cv2
@@ -55,7 +56,6 @@ def analyze_capture(cap_path, pre_recorded):
 
         img = img[160:490, 0:330]
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
-        frame.append(img)
 
         # Different imgs types
         blankImg = img.copy()
@@ -86,6 +86,10 @@ def analyze_capture(cap_path, pre_recorded):
 
         fingers = cv2.subtract(readyBinary, circle, mask=None)
         fings.findFingers(fingers)
+        imgHsv = mouth.show_extreme_points(imgHsv, readyBinary)
+        img = mouth.show_north_extreme_points(img, readyBinary)
+        frame.append(img)
+
 
         frame.lst += [imgGray, imgBinary]
         frame.lst += [img_transformed, centerImg, circle ,fingers]
