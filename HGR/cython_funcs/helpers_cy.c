@@ -1288,8 +1288,8 @@ static PyObject *__pyx_tuple__2;
 
 /* "cython_funcs/helpers_cy.pyx":1
  * def test(x):             # <<<<<<<<<<<<<<
- *     cpdef int y = 0
- *     cpdef int i = 0
+ *     cdef int y = 0
+ *     cdef int i = 0
  */
 
 /* Python wrapper */
@@ -1325,24 +1325,24 @@ static PyObject *__pyx_pf_12cython_funcs_10helpers_cy_test(CYTHON_UNUSED PyObjec
 
   /* "cython_funcs/helpers_cy.pyx":2
  * def test(x):
- *     cpdef int y = 0             # <<<<<<<<<<<<<<
- *     cpdef int i = 0
+ *     cdef int y = 0             # <<<<<<<<<<<<<<
+ *     cdef int i = 0
  *     for i in range(x):
  */
   __pyx_v_y = 0;
 
   /* "cython_funcs/helpers_cy.pyx":3
  * def test(x):
- *     cpdef int y = 0
- *     cpdef int i = 0             # <<<<<<<<<<<<<<
+ *     cdef int y = 0
+ *     cdef int i = 0             # <<<<<<<<<<<<<<
  *     for i in range(x):
  *         y +=i
  */
   __pyx_v_i = 0;
 
   /* "cython_funcs/helpers_cy.pyx":4
- *     cpdef int y = 0
- *     cpdef int i = 0
+ *     cdef int y = 0
+ *     cdef int i = 0
  *     for i in range(x):             # <<<<<<<<<<<<<<
  *         y +=i
  *     return y
@@ -1353,7 +1353,7 @@ static PyObject *__pyx_pf_12cython_funcs_10helpers_cy_test(CYTHON_UNUSED PyObjec
     __pyx_v_i = __pyx_t_3;
 
     /* "cython_funcs/helpers_cy.pyx":5
- *     cpdef int i = 0
+ *     cdef int i = 0
  *     for i in range(x):
  *         y +=i             # <<<<<<<<<<<<<<
  *     return y
@@ -1375,8 +1375,8 @@ static PyObject *__pyx_pf_12cython_funcs_10helpers_cy_test(CYTHON_UNUSED PyObjec
 
   /* "cython_funcs/helpers_cy.pyx":1
  * def test(x):             # <<<<<<<<<<<<<<
- *     cpdef int y = 0
- *     cpdef int i = 0
+ *     cdef int y = 0
+ *     cdef int i = 0
  */
 
   /* function exit code */
@@ -1463,8 +1463,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 
   /* "cython_funcs/helpers_cy.pyx":1
  * def test(x):             # <<<<<<<<<<<<<<
- *     cpdef int y = 0
- *     cpdef int i = 0
+ *     cdef int y = 0
+ *     cdef int i = 0
  */
   __pyx_tuple__2 = PyTuple_Pack(3, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_i); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
@@ -1752,8 +1752,8 @@ if (!__Pyx_RefNanny) {
 
   /* "cython_funcs/helpers_cy.pyx":1
  * def test(x):             # <<<<<<<<<<<<<<
- *     cpdef int y = 0
- *     cpdef int i = 0
+ *     cdef int y = 0
+ *     cdef int i = 0
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12cython_funcs_10helpers_cy_1test, NULL, __pyx_n_s_cython_funcs_helpers_cy); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);

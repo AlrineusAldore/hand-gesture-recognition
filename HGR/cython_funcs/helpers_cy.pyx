@@ -3,4 +3,4 @@ def test(x):
     cdef int i = 0
     for i in range(x):
         y +=i
-    return y
+    return 2
