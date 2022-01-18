@@ -6,7 +6,7 @@ import analysis.general as general
 import helpers
 import cv2
 import matplotlib.pyplot as plt
-from cython_funcs import helpers_cy as cy
+from cython_funcs import test1 as cy
 
 #recist code
 
@@ -23,7 +23,7 @@ def main():
         helpers.InitializeWindows()
 
     print("hifd")
-    cy.test()
+    print("cython output:", cy.test())
     #analyze_capture(VID_NAME, False)  # Analyzing a video
     #analyze_capture(0, False)  # Analyzing camera
 
