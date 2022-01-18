@@ -5,12 +5,11 @@ import analysis.points as pts
 import analysis.general as general
 import helpers
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+from cython_funcs import helpers_cy as cy
 
 #recist code
 
-# import cython
 
 VID_NAME = "Videos\\handGesturesVid.mp4"
 SET_VALUES_MANUALLY = False
@@ -23,8 +22,9 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
-
-    analyze_capture(VID_NAME, False)  # Analyzing a video
+    print("hifd")
+    cy.test()
+    #analyze_capture(VID_NAME, False)  # Analyzing a video
     #analyze_capture(0, False)  # Analyzing camera
 
 
@@ -83,6 +83,7 @@ def analyze_capture(cap_path, pre_recorded):
         frame.lst += [img_transformed, center_img, circle, fingers]
         frame.lst += [img_hsv, ready_binary, ready_img]
         frame.auto_organize()
+
 
 
         stack = frame.stack(1.5)
