@@ -5,7 +5,10 @@ extensions = 'cython_funcs\\helpers_cy.pyx'
 ext_options = {"compiler_directives": {"profile": True}, "annotate": True}
 
 extensions = cythonize(extensions, language_level = "3", **ext_options)
-setup(ext_modules = extensions)
+setup(name = 'PackageHGR',
+      version = '1.0',
+      description = 'This is a gesture recognition package',
+      ext_modules = extensions)
 
 #from setuptools import setup, Extension
 #
