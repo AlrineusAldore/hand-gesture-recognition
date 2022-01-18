@@ -22,15 +22,14 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
-    print("hifd")
-    print("cython output:", cy.test(5))
-    #analyze_capture(VID_NAME, False)  # Analyzing a video
-    #analyze_capture(0, False)  # Analyzing camera
+    #print("cython output:", cy.test(5))
+    analyze_capture(VID_NAME, 1)  # Analyzing a video
+    #analyze_capture(0, 0)  # Analyzing camera
 
 
 
 # Fully analyzes a whole capture
-def analyze_capture(cap_path, pre_recorded):
+def analyze_capture(cap_path, frames_to_skip):
     cap = cv2.VideoCapture(cap_path)
     n = 0
 
@@ -44,10 +43,10 @@ def analyze_capture(cap_path, pre_recorded):
             cap = cv2.VideoCapture(cap_path)
             success, img = cap.read()
 
-        # skips 10 frames if not live
-        if pre_recorded:
+        # skips N frames
+        if frames_to_skip > 1:
             n += 1
-            if n % 10 != 0:
+            if n % frames_to_skip != 0:
                 cap.grab()
                 continue
             n = 0
