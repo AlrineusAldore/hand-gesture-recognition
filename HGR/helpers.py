@@ -60,7 +60,6 @@ def drawContours(img, imgContour, imgCanvas):
             cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
 
 
-#for future cython maybe
 def slow(imgTransformed):
     h = imgTransformed.shape[0]
     w = imgTransformed.shape[1]
