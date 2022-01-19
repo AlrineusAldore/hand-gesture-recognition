@@ -23,7 +23,7 @@ def main():
         helpers.InitializeWindows()
 
     #print("cython output:", cy.test(5))
-    analyze_capture(VID_NAME, 1)  # Analyzing a video
+    analyze_capture(VID_NAME, 0)  # Analyzing a video
     #analyze_capture(0, 0)  # Analyzing camera
 
 
