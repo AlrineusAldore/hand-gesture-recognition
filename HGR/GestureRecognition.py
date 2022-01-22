@@ -75,7 +75,7 @@ def analyze_capture(cap_path, frames_to_skip):
         circle = fings.getCircle(img_transformed)
 
         fingers = cv2.subtract(ready_binary, circle, mask=None)
-        fingers = fings.findFingers(fingers)
+        fingers, fings_count = fings.find_fingers(fingers)
 
 
         frame.lst += [img_transformed, center_img, circle, fingers]
