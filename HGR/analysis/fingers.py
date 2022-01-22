@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 from helpers import autoCropBinImg
-#from skimage.measure import regionprops
+from skimage.measure import regionprops
+
 
 def find_fingers(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
