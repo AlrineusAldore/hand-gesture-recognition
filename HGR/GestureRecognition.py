@@ -85,9 +85,9 @@ def analyze_capture(cap_path, pre_recorded):
         circle = fings.getCircle(img_transformed)
 
         fingers = cv2.subtract(readyBinary, circle, mask=None)
-        fings.findFingers(fingers)
+        fingers_count = fings.findFingers(fingers)
         imgHsv = mouth.show_extreme_points(imgHsv, readyBinary)
-        img = mouth.show_north_extreme_points(img, readyBinary)
+        img = mouth.show_north_extreme_points(img, readyBinary, fingers_count)
         frame.append(img)
 
 

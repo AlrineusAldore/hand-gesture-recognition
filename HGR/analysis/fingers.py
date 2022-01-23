@@ -11,6 +11,7 @@ def findFingers(img):
             count += 1
 
     cv2.putText(img, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+    return count
 
 
 def getCircle(imgTransformed):

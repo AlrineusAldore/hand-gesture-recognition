@@ -9,10 +9,11 @@ def show_extreme_points(img, readyBinary):
     cv2.circle(img, extBot, 3, (255, 255, 0), -1)
     return img
 
-def show_north_extreme_points(img, readyBinary):
-    extLeft, extRight, extTop, extBot = pts.extreme_points(readyBinary)
-    cv2.circle(img, extTop, 3, (255, 0, 0), -1)
-    #set_mouse_point(extTop)
+def show_north_extreme_points(img, readyBinary, fingers_count):
+    if(fingers_count == 1):
+        extLeft, extRight, extTop, extBot = pts.extreme_points(readyBinary)
+        cv2.circle(img, extTop, 3, (255, 0, 0), -1)
+        #set_mouse_point(extTop)
     return img
 
 def set_mouse_point(mouse_point):
