@@ -2,6 +2,7 @@ import segmentation.segmentation as sgm
 import frame.frame as fr
 import analysis.fingers as fings
 import analysis.points as pts
+import analysis.mouth as mouth
 import analysis.general as general
 import helpers
 import cv2
@@ -62,7 +63,6 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         img = img[160:490, 0:330]
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
-        frame.append(img)
 
         blank_img = img.copy()
         blank_img[:] = 0, 0, 0
@@ -81,9 +81,12 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         circle = fings.getCircle(img_transformed)
 
-        fingers = cv2.subtract(ready_binary, circle, mask=None)
-        fingers, fings_count = fings.find_fingers(fingers)
-        cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+        fingers = cv2.subtract(readyBinary, circle, mask=None)
+        fingers_count = fings.findFingers(fingers)
+        imgHsv = mouth.show_extreme_points(imgHsv, readyBinary)
+        img = mouth.show_north_extreme_points(img, readyBinary, fingers_count)
+        frame.append(img)
+
 
 
         frame.lst += [img_transformed, center_img, circle, fingers]

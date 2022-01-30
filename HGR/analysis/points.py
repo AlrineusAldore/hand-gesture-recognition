@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import imutils
 
 def find_lower_points(img):
     # Make a vid 256-500
@@ -45,6 +45,20 @@ def find_lower_points(img):
             cv2.circle(new_img, far, 2, [0, 0, 255], -1)
     if cnt > 0:
         cnt = cnt + 1
-    cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(newImg, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
+    #print(cnt)
 
-    return new_img, cnt
+    return newImg
+
+def extreme_points(binar_img):
+    # find contours in thresholded image, then grab the largest
+    # one
+    cnts = cv2.findContours(binar_img.copy(), cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    c = max(cnts, key=cv2.contourArea)
+    extLeft = tuple(c[c[:, :, 0].argmin()][0])
+    extRight = tuple(c[c[:, :, 0].argmax()][0])
+    extTop = tuple(c[c[:, :, 1].argmin()][0])
+    extBot = tuple(c[c[:, :, 1].argmax()][0])
+    return extLeft, extRight, extTop, extBot
