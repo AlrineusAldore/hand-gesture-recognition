@@ -72,7 +72,7 @@ class Frame():
 
     #turns the img_stack into an actual stack of imgs with size of scale
     def stack(self, scale):
-        img_array = self.img_stack
+        img_array = self.img_stack.copy()
 
         rows = len(img_array)
         cols = len(img_array[0])
@@ -82,7 +82,9 @@ class Frame():
         if rowsAvailable:
             for x in range ( 0, rows):
                 for y in range(0, cols):
-                    if img_array[x][y].shape[:2] == img_array[0][0].shape [:2]:
+                    hi = img_array[x][y].shape[:2]
+                    bye = img_array[0][0].shape[:2]
+                    if hi == bye:
                         img_array[x][y] = cv2.resize(img_array[x][y], (0, 0), None, scale, scale)
                     else:
                         img_array[x][y] = cv2.resize(img_array[x][y], (img_array[0][0].shape[1], img_array[0][0].shape[0]), None, scale, scale)
