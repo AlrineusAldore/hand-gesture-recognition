@@ -1,6 +1,7 @@
 import analysis.points as pts
 import cv2
 import mouse
+
 def show_extreme_points(img, readyBinary):
     extLeft, extRight, extTop, extBot = pts.extreme_points(readyBinary)
     cv2.circle(img, extLeft, 3, (0, 0, 255), -1)

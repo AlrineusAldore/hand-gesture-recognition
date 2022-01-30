@@ -2,7 +2,7 @@ import segmentation.segmentation as sgm
 import frame.frame as fr
 import analysis.fingers as fings
 import analysis.points as pts
-import analysis.mouth as mouth
+from analysis import mouse_handler
 import analysis.general as general
 import helpers
 import cv2
@@ -81,10 +81,12 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         circle = fings.getCircle(img_transformed)
 
-        fingers = cv2.subtract(readyBinary, circle, mask=None)
-        fingers_count = fings.findFingers(fingers)
-        imgHsv = mouth.show_extreme_points(imgHsv, readyBinary)
-        img = mouth.show_north_extreme_points(img, readyBinary, fingers_count)
+        fingers = cv2.subtract(ready_binary, circle, mask=None)
+        fingers, fings_count = fings.find_fingers(fingers)
+        cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+
+        img_hsv = mouse_handler.show_extreme_points(img_hsv, ready_binary)
+        img = mouse_handler.show_north_extreme_points(img, ready_binary, fings_count)
         frame.append(img)
 
 

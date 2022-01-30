@@ -42,7 +42,6 @@ def getCircle(imgTransformed):
             break
 
     crop, r = autoCropBinImg(imgTransformed)
-    #print("radius:", r)
     circle = cv2.circle(centerImg, center, r, 255, -1)
 
     return circle
