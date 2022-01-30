@@ -6,6 +6,7 @@ import analysis.general as general
 import helpers
 import cv2
 import matplotlib.pyplot as plt
+from gui import gui_handler as gui
 from cython_funcs import helpers_cy as cy
 
 #recist code
@@ -22,14 +23,18 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
+    #app = gui.make_gui()
+
+
     #print("cython output:", cy.test(5))
-    analyze_capture(VID_NAME, 0)  # Analyzing a video
+    #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
+    analyze_capture(VID_NAME, 0, 0)  # Analyzing a video
     #analyze_capture(0, 0)  # Analyzing camera
 
 
 
 # Fully analyzes a whole capture
-def analyze_capture(cap_path, frames_to_skip):
+def analyze_capture(cap_path, frames_to_skip, app):
     cap = cv2.VideoCapture(cap_path)
     n = 0
 
@@ -86,6 +91,7 @@ def analyze_capture(cap_path, frames_to_skip):
 
         stack = frame.stack(1.5)
 
+        #app.frame.panel.put_img(stack)
         cv2.imshow("stack", stack)
 
         #histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))

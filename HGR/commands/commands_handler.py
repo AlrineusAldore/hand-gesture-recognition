@@ -1,4 +1,5 @@
 from enum import Enum
+#import screen_brightness_control as sbc
 
 class CommandsHandler:
     def __init__(self):
@@ -18,3 +19,9 @@ class Sign(Enum):
     ok_sign = "got_you"
     index_middle_open = "increase_volume"
     index_middle_ring_open = "decrease_volume"
+
+
+def brightness():
+    # get current brightness value
+    #print(sbc.get_brightness())
+    pass
