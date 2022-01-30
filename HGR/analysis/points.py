@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 
+
 def find_lower_points(img):
     # Make a vid 256-500
     new_img = img.copy()
