@@ -2,13 +2,14 @@ import segmentation.segmentation as sgm
 import frame.frame as fr
 import analysis.fingers as fings
 import analysis.points as pts
+from analysis import mouse_handler
 import analysis.general as general
 import helpers
 import cv2
 import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
-#from cython_funcs import helpers_cy as cy
+from cython_funcs import helpers_cy as cy
 
 #recist code
 
@@ -24,7 +25,7 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
-    app = gui.make_gui()
+    #app = gui.make_gui()
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
@@ -62,7 +63,6 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         img = img[160:490, 0:330]
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
-        frame.append(img)
 
         blank_img = img.copy()
         blank_img[:] = 0, 0, 0
@@ -85,9 +85,15 @@ def analyze_capture(cap_path, frames_to_skip, app):
         fingers, fings_count = fings.find_fingers(fingers)
         cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
 
+        img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), ready_binary)
+        img_pts = mouse_handler.show_north_extreme_points(img.copy(), ready_binary, fings_count)
+        frame.append(img)
+
+
 
         frame.lst += [img_transformed, center_img, circle, fingers]
         frame.lst += [img_hsv, ready_binary, ready_img]
+        frame.lst += [img_hsv_pts, img_pts]
         frame.auto_organize()
 
 
