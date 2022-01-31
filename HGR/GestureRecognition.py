@@ -85,14 +85,15 @@ def analyze_capture(cap_path, frames_to_skip, app):
         fingers, fings_count = fings.find_fingers(fingers)
         cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
 
-        img_hsv = mouse_handler.show_extreme_points(img_hsv, ready_binary)
-        img = mouse_handler.show_north_extreme_points(img, ready_binary, fings_count)
+        img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), ready_binary)
+        img_pts = mouse_handler.show_north_extreme_points(img.copy(), ready_binary, fings_count)
         frame.append(img)
 
 
 
         frame.lst += [img_transformed, center_img, circle, fingers]
         frame.lst += [img_hsv, ready_binary, ready_img]
+        frame.lst += [img_hsv_pts, img_pts]
         frame.auto_organize()
 
 

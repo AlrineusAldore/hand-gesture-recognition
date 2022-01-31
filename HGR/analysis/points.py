@@ -3,6 +3,8 @@ import numpy as np
 import imutils
 
 
+# Find all the lower points between the fingers
+# Return new image and finger count
 def find_lower_points(img):
     # Make a vid 256-500
     new_img = img.copy()
@@ -52,15 +54,14 @@ def find_lower_points(img):
 
 
 
-def extreme_points(binar_img):
-    # find contours in thresholded image, then grab the largest
-    # one
-    cnts = cv2.findContours(binar_img.copy(), cv2.RETR_EXTERNAL,
+def extreme_points(binary_img):
+    # Finds contours in binary image and grabs the largest one
+    cnts = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     c = max(cnts, key=cv2.contourArea)
-    extLeft = tuple(c[c[:, :, 0].argmin()][0])
-    extRight = tuple(c[c[:, :, 0].argmax()][0])
-    extTop = tuple(c[c[:, :, 1].argmin()][0])
-    extBot = tuple(c[c[:, :, 1].argmax()][0])
-    return extLeft, extRight, extTop, extBot
+    ext_left = tuple(c[c[:, :, 0].argmin()][0])
+    ext_right = tuple(c[c[:, :, 0].argmax()][0])
+    ext_top = tuple(c[c[:, :, 1].argmin()][0])
+    ext_bot = tuple(c[c[:, :, 1].argmax()][0])
+    return ext_left, ext_right, ext_top, ext_bot
