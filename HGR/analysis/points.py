@@ -20,7 +20,7 @@ def find_lower_points(img):
     # Contours
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if contours == ():
-        return new_img
+        return new_img, 0
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(new_img, [contours], -1, (255, 255, 0), 1)
 
@@ -59,6 +59,8 @@ def extreme_points(binary_img):
     cnts = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
+    if not cnts: #return if tuple empty -> no contours
+        return
     c = max(cnts, key=cv2.contourArea)
     ext_left = tuple(c[c[:, :, 0].argmin()][0])
     ext_right = tuple(c[c[:, :, 0].argmax()][0])

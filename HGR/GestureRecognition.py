@@ -27,10 +27,12 @@ def main():
 
     #app = gui.make_gui()
 
+    #fings.measure_object()
+
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
     analyze_capture(VID_NAME, 5, 0)  # Analyzing a video
-    #analyze_capture(0, 0)  # Analyzing camera
+    #analyze_capture(0, 0, 0)  # Analyzing camera
 
 
 
@@ -116,10 +118,10 @@ def analyze_capture(cap_path, frames_to_skip, app):
         stack = frame.stack(1.5)
 
         #app.frame.panel.put_img(stack)
-        cv2.imshow("stack", stack)
+        #cv2.imshow("stack", stack)
 
-        #histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
-        #cv2.imshow("histo", histo.stack(2))
+        histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
+        cv2.imshow("histo", histo.stack(2))
         #cv2.waitKey(0)
 
         #if 'q' is pressed, close all windows and break loop

@@ -5,7 +5,11 @@ import mouse
 
 # Draws extreme points on image and returns it
 def show_extreme_points(img, binary):
-    ext_left, ext_right, ext_top, ext_bot = pts.extreme_points(binary)
+    ext = pts.extreme_points(binary)
+    if ext is None:
+        return img
+    # unpack ext if there is anything to unpackq
+    ext_left, ext_right, ext_top, ext_bot = ext
     cv2.circle(img, ext_left, 3, (0, 0, 255), -1)
     cv2.circle(img, ext_right, 3, (0, 255, 0), -1)
     cv2.circle(img, ext_top, 3, (255, 0, 0), -1)
@@ -18,7 +22,7 @@ def show_north_extreme_points(img, binary, fingers_count):
     if (fingers_count == 1):
         ext_left, ext_right, ext_top, ext_bot = pts.extreme_points(binary)
         cv2.circle(img, ext_top, 3, (255, 0, 0), -1)
-        set_mouse_point(ext_top)
+        #set_mouse_point(ext_top)
     return img
 
 
