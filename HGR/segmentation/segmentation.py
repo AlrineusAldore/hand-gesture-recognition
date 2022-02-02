@@ -37,6 +37,7 @@ def histogram(img):
     min_pts = np.array(signal.argrelmin(yhat2), dtype="float64")
     max_pts = np.array(signal.argrelmax(yhat2), dtype="float64")
     mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
+
     plt.plot(x, yhat, color='black', label="smooth s green")
     plt.plot(x, yhat2, color='orange', label="smooth NO green")
 
@@ -54,6 +55,33 @@ def histogram(img):
     plt.pause(0.001)
     return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), s_local_min, hist_v.argmax(), hist_v.argmin()
 
+
+# f - function f(x)
+def find_min_between_max(f, min_pts, max_pts):
+    pts = sorted(min_pts + max_pts)
+    # First and second highest max points
+    first = f.argmax()
+    second = 0
+
+    # Find second highest max point
+    for x in max_pts:
+        if f[x] > second and f[x] < first:
+            second = x
+
+    if first < second:
+        left = first
+        right = second
+    else:
+        left = second
+        right = first
+
+    # Get minimums to the left and right of the 2 max points
+    if True:
+        pass
+
+
+def f(x):
+    return x
 
 
 # Remove any unnecessary extreme points with similar values
