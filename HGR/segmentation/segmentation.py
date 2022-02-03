@@ -34,26 +34,20 @@ def histogram(img):
     yhat2 = savgol_filter(yhat, 21, 2)  # type: np.ndarray
 
     # All local min & max points
-    min_pts = np.array(signal.argrelmin(yhat2), dtype="float64")
-    max_pts = np.array(signal.argrelmax(yhat2), dtype="float64")
-    mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
+    min_pts = np.array(signal.argrelmin(yhat2), dtype="uint8")
+    max_pts = np.array(signal.argrelmax(yhat2), dtype="uint8")
 
     plt.plot(x, yhat, color='black', label="smooth s green")
     plt.plot(x, yhat2, color='orange', label="smooth NO green")
 
-    s_local_min = 0
-    for i in range(len(yhat)):
-        # print(i, yhat.tolist()[i]
-        if (i < len(yhat)
-                and yhat[i] > 0 and yhat[i - 1] > yhat[i]
-                and yhat[i + 1] > yhat[i]):
-            s_local_min = i
+    mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
+    s_start, s_end = find_min_between_max(yhat2, mn, mx)
 
-    plt.title(f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{hist_s.argmax()}, sMin:{s_local_min}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
+    plt.title(f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{s_end}, sMin:{s_start}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
 
     plt.legend()
     plt.pause(0.001)
-    return hist_h.argmax(), hist_h.argmin(), hist_s.argmax(), s_local_min, hist_v.argmax(), hist_v.argmin()
+    return hist_h.argmax(), hist_h.argmin(), s_end, s_start, hist_v.argmax(), hist_v.argmin()
 
 
 # f - function f(x)
@@ -61,12 +55,24 @@ def find_min_between_max(f, min_pts, max_pts):
     pts = sorted(min_pts + max_pts)
     # First and second highest max points
     first = f.argmax()
-    second = 0
+    second = f.argmin()  # Start with the lowest value
+    lowest = first  # Start with the highest value
 
-    # Find second highest max point
+    # Check how many max points have values above 20
+    high_max_count = 0
     for x in max_pts:
-        if f[x] > second and f[x] < first:
+        if f[x] > 20:
+            high_max_count += 1
+
+    # Find second highest max point that is not adjacent to first highest
+    prev = 0
+    for x in max_pts:
+        if f[x] > f[second] and f[x] < f[first] and prev != first:
             second = x
+
+        # Only account for prev if there are multiple high points that are not first
+        if high_max_count > 2:
+            prev = x
 
     if first < second:
         left = first
@@ -76,8 +82,20 @@ def find_min_between_max(f, min_pts, max_pts):
         right = first
 
     # Get minimums to the left and right of the 2 max points
-    if True:
-        pass
+    start = pts[pts.index(left) - 1]
+    end = pts[pts.index(right) + 1]
+
+    # Get lowest min between maxes
+    for x in min_pts:
+        if f[x] < f[lowest] and x > start and x < end:
+            lowest = x
+
+    # Return the range of the second max point as it's most likely the hand
+    if first < second:
+        return lowest, end
+    else:
+        return start, lowest
+    #return lowest, start, end
 
 
 def f(x):
@@ -111,6 +129,7 @@ def remove_useless_extreme_points(f, min_pts, max_pts):
                 mid = ((pts[i-1]+pts[i+1]))//2
                 b.remove(pts[i+1])
                 b[:] = [mid if x==pts[i-1] else x for x in b]  # Change pts[i-1]'s value to mid
+
 
     return new_mins, new_maxes
 
