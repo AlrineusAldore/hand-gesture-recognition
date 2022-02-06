@@ -34,7 +34,7 @@ def autoCropBinImg(bin):
         max_y = max(white_pt_coords[:, 0])
         max_x = max(white_pt_coords[:, 1])
 
-        r = int(min([max_y - min_y, max_x - min_x]) // 2)
+        r = int(sum([max_y - min_y, max_x - min_x]) // 4)
 
         crop = bin[min_y:max_y, min_x:max_x]
 

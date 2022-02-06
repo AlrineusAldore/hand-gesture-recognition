@@ -1,17 +1,24 @@
 import cv2
+import numpy as np
 from helpers import autoCropBinImg
 
 def findFingers(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     count = 0
+    hh, ww = img.shape
+    fingers = np.zeros(img.shape, img.dtype)
+
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > 20:  # to discard small random lines
-            cv2.drawContours(img, cnt, -1, 100, 2)
-            count += 1
+            x,y,w,h = cv2.boundingRect(cnt)
+            #Discard contour that touches bottom of image since it's not a finger
+            if y+h != hh:
+                cv2.fillPoly(fingers, pts=[cnt],color=255)
+                count += 1
 
-    cv2.putText(img, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
-    return count
+    cv2.putText(fingers, str(count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+    return fingers
 
 
 def getCircle(imgTransformed):

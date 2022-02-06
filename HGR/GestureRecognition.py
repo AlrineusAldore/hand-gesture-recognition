@@ -2,7 +2,6 @@ import segmentation.segmentation as sgm
 import frame.frame as fr
 import analysis.fingers as fings
 import analysis.points as pts
-import analysis.mouth as mouth
 import analysis.general as general
 import helpers
 import cv2
@@ -25,8 +24,8 @@ def main():
         helpers.InitializeWindows()
 
 
-    #analyze_capture(VID_NAME, True)  # Analyzing a video
-    analyze_capture(0, True)  # Analyzing camera
+    analyze_capture(VID_NAME, False)  # Analyzing a video
+    #analyze_capture(0, True)  # Analyzing camera
 
 
 
@@ -46,7 +45,7 @@ def analyze_capture(cap_path, pre_recorded):
             success, img = cap.read()
 
         # skips 10 frames if not live
-        if True:
+        if pre_recorded:
             n += 1
             if n % 10 != 0:
                 success = cap.grab()
@@ -57,6 +56,7 @@ def analyze_capture(cap_path, pre_recorded):
 
         img = img[160:490, 0:330]
         img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
+        frame.append(img)
 
         # Different imgs types
         blankImg = img.copy()
@@ -85,11 +85,7 @@ def analyze_capture(cap_path, pre_recorded):
         circle = fings.getCircle(img_transformed)
 
         fingers = cv2.subtract(readyBinary, circle, mask=None)
-        fingers_count = fings.findFingers(fingers)
-        imgHsv = mouth.show_extreme_points(imgHsv, readyBinary)
-        img = mouth.show_north_extreme_points(img, readyBinary, fingers_count)
-        frame.append(img)
-
+        fingers = fings.findFingers(fingers)
 
         frame.lst += [imgGray, imgBinary]
         frame.lst += [img_transformed, centerImg, circle ,fingers]
@@ -103,7 +99,7 @@ def analyze_capture(cap_path, pre_recorded):
 
         #histo = fr.Frame([imgHsv, readyBinary, readyImg] + list(sgm.hsv_differentiation(img, True, False)))
         #cv2.imshow("histo", histo.stack(2))
-        # cv2.waitKey(0)
+        #cv2.waitKey(0)
 
         #if 'q' is pressed, close all windows and break loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
