@@ -32,8 +32,8 @@ def main():
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
-    analyze_capture(VID_NAME, 0, 0)  # Analyzing a video
-    #analyze_capture(0, 0, 0)  # Analyzing camera
+    #analyze_capture(VID_NAME, 0, 0)  # Analyzing a video
+    analyze_capture(0, 0, 0)  # Analyzing camera
 
 
 
