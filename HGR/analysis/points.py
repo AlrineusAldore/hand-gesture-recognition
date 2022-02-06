@@ -32,7 +32,7 @@ def find_lower_points(img):
     hull = cv2.convexHull(contours, returnPoints=False)
     defects = cv2.convexityDefects(contours, hull)
     if defects is None:
-        return
+        return new_img, 0
     cnt = 0
     for i in range(defects.shape[0]):  # Calculate the angle
         s, e, f, d = defects[i][0]

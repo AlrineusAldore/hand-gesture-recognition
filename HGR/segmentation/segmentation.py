@@ -1,9 +1,12 @@
+from segmentation.constants import *
+from segmentation.helpers import *
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 import scipy.signal as signal
 from itertools import chain
+import time
 
 
 def histogram(img):
@@ -14,10 +17,10 @@ def histogram(img):
     hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
     hist_s = cv2.calcHist([s], [0], None, [256], [0, 256])
     hist_v = cv2.calcHist([v], [0], None, [256], [0, 256])
-    plt.cla()
-    plt.plot(hist_h, color='r', label="h")
-    plt.plot(hist_s, color='g', label="s")
-    plt.plot(hist_v, color='b', label="v")
+    start = time.time()
+    #start_segmentation_plot(hist_h, hist_s, hist_v)
+    end = time.time()
+    #print("time for start of plot:", end-start)
 
     # Turns s (2d array) to a 1d array, chaining the end of each line with the start of the next one
     flattened_s_lst = list(chain.from_iterable(s.tolist()))
@@ -37,16 +40,17 @@ def histogram(img):
     min_pts = np.array(signal.argrelmin(yhat2), dtype="uint8")
     max_pts = np.array(signal.argrelmax(yhat2), dtype="uint8")
 
-    plt.plot(x, yhat, color='black', label="smooth s green")
-    plt.plot(x, yhat2, color='orange', label="smooth NO green")
-
     mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
     s_start, s_end = find_min_between_max(yhat2, mn, mx)
 
-    plt.title(f"hMax:{hist_h.argmax()}, hMin:{hist_h.argmin()}, sMax:{s_end}, sMin:{s_start}, vMax:{hist_v.argmax()}, vMin:{hist_v.argmin()}")
+    #start = time.time()
+    #start_segmentation_plot(hist_h, hist_s, hist_v)
+    #plt.plot(x, yhat, color='black', label="smooth s")
+    #plt.plot(x, yhat2, color='orange', label="smoother s")
+    #end_segmentation_plot((hist_h.argmax(), hist_h.argmin()), (s_end, s_start), (hist_v.argmax(), hist_v.argmin()))
+    #end = time.time()
+    #print("time for plot: ", end-start)
 
-    plt.legend()
-    plt.pause(0.001)
     return hist_h.argmax(), hist_h.argmin(), s_end, s_start, hist_v.argmax(), hist_v.argmin()
 
 
@@ -58,21 +62,29 @@ def find_min_between_max(f, min_pts, max_pts):
     second = f.argmin()  # Start with the lowest value
     lowest = first  # Start with the highest value
 
-    # Check how many max points have values above 20
+    # If there is only 1 max point then every value can be the hand
+    if len(max_pts) < 2:
+        return 0, 255
+
+    # Check how many max points have values above NOT_MANY_PIXELS
     high_max_count = 0
     for x in max_pts:
-        if f[x] > 20:
+        if f[x] > NOT_MANY_PIXELS:
+            if x != first: # Get the last highest max that is not absolute max
+                second = x
             high_max_count += 1
 
-    # Find second highest max point that is not adjacent to first highest
-    prev = 0
-    for x in max_pts:
-        if f[x] > f[second] and f[x] < f[first] and prev != first:
-            second = x
+    # If all the other maxes are small (below NOT_MANY_PIXELS)
+    if second == f.argmin():
+        # Find second highest max point that is not adjacent to first highest
+        prev = 0
+        for x in max_pts:
+            if f[x] > f[second] and f[x] < f[first] and prev != first:
+                second = x
 
-        # Only account for prev if there are multiple high points that are not first
-        if high_max_count > 2:
-            prev = x
+            # Only account for prev if there are multiple high points that are not first
+            if high_max_count > 2:
+                prev = x
 
     if first < second:
         left = first
@@ -82,8 +94,19 @@ def find_min_between_max(f, min_pts, max_pts):
         right = first
 
     # Get minimums to the left and right of the 2 max points
-    start = pts[pts.index(left) - 1]
-    end = pts[pts.index(right) + 1]
+    left_i = pts.index(left)
+    right_i = pts.index(right)
+
+    # Get min point / zero point to the left of left max
+    if left_i == 0:
+        start = check_for_value(f, 0, end=left)
+    else:
+        start = pts[left_i - 1]
+    # Get min point / zero point to the right of right max
+    if right_i == len(pts) - 1 or True:
+        end = check_for_value(f, 0, start=right)
+    else:
+        end = pts[right_i + 1]
 
     # Get lowest min between maxes
     for x in min_pts:
@@ -95,11 +118,25 @@ def find_min_between_max(f, min_pts, max_pts):
         return lowest, end
     else:
         return start, lowest
-    #return lowest, start, end
 
 
-def f(x):
-    return x
+def check_for_value(f, value, start=0, end=256):
+    """
+    Function checks the first occurrence of value in function f(x) within the given range and returns it
+    :param f: math function f(x) with x between 0 and 255
+    :param value: wanted y value in function
+    :param start: from when should we start
+    :param end: when should we stop
+    :return: the first x of the wanted y value
+    """
+    res = 0
+    for x in range(start, end):
+        if int(f[x]) == value:
+            res = x
+            break
+
+    return res
+
 
 
 # Remove any unnecessary extreme points with similar values
@@ -156,7 +193,7 @@ def hsv_differentiation(img, is_histogram, set_manually):
     h2Max = h1Max
 
     if is_histogram:
-        h1Max, h1Min, sMax, sMin, vMax, vMin = histogram(img)
+        temp, temp, sMax, sMin, temp, temp = histogram(img)
 
     if set_manually and not is_histogram:
         h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")
@@ -194,6 +231,7 @@ def hsv_differentiation(img, is_histogram, set_manually):
     # closing
     closing_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 4))
     opening_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    #ellipse_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
     closing_mask = cv2.morphologyEx(both_masks, cv2.MORPH_CLOSE, closing_kernel)
     closing_mask_res = cv2.bitwise_and(img, img, mask=closing_mask)
 

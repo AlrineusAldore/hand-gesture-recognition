@@ -10,11 +10,12 @@ import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
 from cython_funcs import helpers_cy as cy
+import time
 
 #recist code
 
 
-VID_NAME = "Videos\\handGesturesVid.mp4"
+VID_NAME = "Videos\\handGesturesVid2.mp4"
 SET_VALUES_MANUALLY = False
 
 
@@ -31,7 +32,7 @@ def main():
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
-    analyze_capture(VID_NAME, 5, 0)  # Analyzing a video
+    analyze_capture(VID_NAME, 0, 0)  # Analyzing a video
     #analyze_capture(0, 0, 0)  # Analyzing camera
 
 
@@ -45,6 +46,7 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
     #loop forever
     while cap.isOpened():
+        ##start_tot = time.time()
 
         success, img = cap.read()
 
@@ -120,9 +122,17 @@ def analyze_capture(cap_path, frames_to_skip, app):
         #app.frame.panel.put_img(stack)
         #cv2.imshow("stack", stack)
 
-        histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
+        ##start = time.time()
+        histo = fr.Frame([img, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
+        ##end = time.time()
+        ##print("time for frame: ", end-start)
+
         cv2.imshow("histo", histo.stack(2))
         #cv2.waitKey(0)
+
+        ##end_tot = time.time()
+        ##print("time for everything:", end_tot-start_tot)
+        ##print("percentage of time of frame compared to everything:", str(int((end-start)/(end_tot-start_tot))*100) + "%")
 
         #if 'q' is pressed, close all windows and break loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
