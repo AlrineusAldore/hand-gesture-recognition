@@ -44,6 +44,7 @@ def analyze_capture(cap_path, pre_recorded):
             cap = cv2.VideoCapture(cap_path)
             success, img = cap.read()
 
+
         # skips 10 frames if not live
         if pre_recorded:
             n += 1
