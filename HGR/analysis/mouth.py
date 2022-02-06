@@ -26,5 +26,5 @@ def show_north_extreme_points(img, binary, fingers_count):
 def set_mouse_point(mouse_point):
     curr = mouse.get_position()
     # Needs to change to mouse.move() with combination of mouse.press() and mouse.release()
-    mouse.drag(curr[0], curr[1], mouse_point[0], mouse_point[1], absolute=False, duration=0.1)
+    # mouse.drag(curr[0], curr[1], mouse_point[0], mouse_point[1], absolute=False, duration=0.1)
 

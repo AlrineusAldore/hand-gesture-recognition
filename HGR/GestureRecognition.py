@@ -9,7 +9,7 @@ import cv2
 import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
-from cython_funcs import helpers_cy as cy
+#from cython_funcs import helpers_cy as cy
 
 #recist code
 
@@ -25,16 +25,17 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
-    #app = gui.make_gui()
+    app = gui.make_gui()
 
     #print("cython output:", cy.test(5))
-    #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
-    analyze_capture(VID_NAME, 5, 0)  # Analyzing a video
+    #app.Di analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
+    #analyze_capture(VID_NAME, 5, 0)  # Analyzing a video
     #analyze_capture(0, 0)  # Analyzing camera
 
 
 
 # Fully analyzes a whole capture
+# return stack
 def analyze_capture(cap_path, frames_to_skip, app):
     cap = cv2.VideoCapture(cap_path)
     n = 0
@@ -115,17 +116,14 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         stack = frame.stack(1.5)
 
-        #app.frame.panel.put_img(stack)
         cv2.imshow("stack", stack)
-
-        #histo = fr.Frame([img_hsv, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
-        #cv2.imshow("histo", histo.stack(2))
-        #cv2.waitKey(0)
 
         #if 'q' is pressed, close all windows and break loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
+
+        return stack
 
 
 
