@@ -8,7 +8,6 @@ class ShowCapture(wx.Panel):
 
         self.capture = capture
         ret, frame = self.capture.read()
-
         height, width = frame.shape[:2]
         parent.SetSize((width, height))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
