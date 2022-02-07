@@ -126,6 +126,7 @@ def hsv_differentiation(img, is_histogram, set_manually):
     return (img_hsv, opening_mask, opening_mask_res)
 
 
+
 def find_max_color(img):
     # Number of bins
     LENGTH = 16
@@ -160,4 +161,3 @@ def find_max_color(img):
     max_color[:] = (i * 256 / HEIGHT, j * 256 / WIDTH, k * 256 / LENGTH)
 
     return max_color
-
