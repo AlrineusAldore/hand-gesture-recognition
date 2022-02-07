@@ -1,4 +1,5 @@
 from gui.constants import *
+from gui.capture_hanlder import *
 import cv2
 import numpy as np
 import wx
@@ -10,50 +11,20 @@ class MyApp(wx.App):
 
         self.init_frame()
 
-    def init_frame(self):
-        self.frame = MyFrame(parent=None, title="framu", pos=(500, 500))
-        self.frame.Show()
-
-
-
-class MyFrame(wx.Frame):
-    def __init__(self, parent, title, pos):
-        super().__init__(parent=parent, title=title, pos=pos)
-
-        self.panel = MyPanel(parent=self)
-
-
-
-class MyPanel(wx.Panel):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        #text = "Put your hand in the square for five seconds after pressing the button"
-        #self.welcomeText = wx.StaticText(self, id=wx.ID_ANY, label=text, pos=(50, 50))
-
-    def put_img(self, img, coords=(0,0)):
-        img = cvimage_to_wx(img)
-        dc = wx.BufferedPaintDC(self)
-        dc.Clear()
-        dc.DrawBitmap(img, coords)
-        #self.currentBitmap = img
-        #self.Refresh()
-        #wx.PaintDC.DrawBitmap(img)
-        #wx.StaticBitmap(self, -1, img, coords, (img.GetWidth(), img.GetHeight()))
-
 
 def make_gui():
-    app = MyApp()
-    #app.MainLoop()
+    capture = cv2.VideoCapture(0)
+    app = wx.App()
+    frame = wx.Frame(None)
+    ShowCapture(frame, capture)
 
+    frame.Show()
+    app.MainLoop()
     return app
 
 
 def update_img(img):
     pass
-
-
-
 
 
 def cvimage_to_wx(cv2_image):

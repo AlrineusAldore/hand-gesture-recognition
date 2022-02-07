@@ -8,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
-from cython_funcs import helpers_cy as cy
+#from cython_funcs import helpers_cy as cy
 
 #recist code
 
@@ -24,7 +24,7 @@ def main():
     if SET_VALUES_MANUALLY:
         helpers.InitializeWindows()
 
-    #app = gui.make_gui()
+    app = gui.make_gui()
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
