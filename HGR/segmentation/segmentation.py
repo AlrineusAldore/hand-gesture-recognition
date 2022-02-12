@@ -40,22 +40,23 @@ def histogram(img):
     min_pts = np.array(signal.argrelmin(yhat2), dtype="uint8")
     max_pts = np.array(signal.argrelmax(yhat2), dtype="uint8")
 
-    mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
-    s_start, s_end = find_min_between_max(yhat2, mn, mx)
-
-    #start = time.time()
     #start_segmentation_plot(hist_h, hist_s, hist_v)
     #plt.plot(x, yhat, color='black', label="smooth s")
     #plt.plot(x, yhat2, color='orange', label="smoother s")
-    #end_segmentation_plot((hist_h.argmax(), hist_h.argmin()), (s_end, s_start), (hist_v.argmax(), hist_v.argmin()))
+
+    mn, mx = remove_useless_extreme_points(yhat2, min_pts, max_pts)
+    s_start, s_end = find_min_between_max(yhat2, mn, mx, (min_pts, max_pts))
+
+    #start = time.time()
+    #end_segmentation_plot((hist_h.argmin(), hist_h.argmax()), (s_start, s_end), (hist_v.argmin(), hist_v.argmax()))
     #end = time.time()
     #print("time for plot: ", end-start)
 
-    return hist_h.argmax(), hist_h.argmin(), s_end, s_start, hist_v.argmax(), hist_v.argmin()
+    return hist_h.argmin(), hist_h.argmax(), s_start, s_end, hist_v.argmin(), hist_v.argmax()
 
 
 # f - function f(x)
-def find_min_between_max(f, min_pts, max_pts):
+def find_min_between_max(f, min_pts, max_pts, minmax):
     pts = sorted(min_pts + max_pts)
     # First and second highest max points
     first = f.argmax()
@@ -103,7 +104,7 @@ def find_min_between_max(f, min_pts, max_pts):
     else:
         start = pts[left_i - 1]
     # Get min point / zero point to the right of right max
-    if right_i == len(pts) - 1 or True:
+    if right_i == len(pts) - 1:
         end = check_for_value(f, 0, start=right)
     else:
         end = pts[right_i + 1]
@@ -129,7 +130,7 @@ def check_for_value(f, value, start=0, end=256):
     :param end: when should we stop
     :return: the first x of the wanted y value
     """
-    res = 0
+    res = end
     for x in range(start, end):
         if int(f[x]) == value:
             res = x
@@ -150,7 +151,7 @@ def remove_useless_extreme_points(f, min_pts, max_pts):
         # If extreme points are really close to each other
         if pts[i] - pts[i-1] < 5 and pts[i+1] - pts[i] < 5:
             # And if the slope between them is small enough
-            if slope(pts[i-1], f[i-1], pts[i], f[i]) < 0.25 and slope(pts[i], f[i], pts[i+1], f[i+1]) < 0.25:
+            if abs(slope(pts[i-1], pts[i], f=f)) < SMALL_SLOPE and abs(slope(pts[i], pts[i+1], f=f)) < SMALL_SLOPE:
                 # Get rid of appropriate min/max depending on current point
                 if pts[i] in new_mins:
                     a = new_mins
@@ -167,13 +168,68 @@ def remove_useless_extreme_points(f, min_pts, max_pts):
                 b.remove(pts[i+1])
                 b[:] = [mid if x==pts[i-1] else x for x in b]  # Change pts[i-1]'s value to mid
 
+    # If endpoints are found to be significant min/max, then add them to new_mins/new_maxes accordingly
+    end_mins, end_maxes = check_for_endpoints_extremas(f)
+
+    for x in end_mins:
+        index = 0
+        if x == 255:
+            index = len(new_mins)
+        new_mins.insert(index, x)
+
+    for x in end_maxes:
+        index = 0
+        if x == 255:
+            index = len(new_mins)
+        new_mins.insert(index, x)
+
 
     return new_mins, new_maxes
 
 
+
+def check_for_endpoints_extremas(f):
+    """
+    Checks if endpoints of f(x) are significant min/max and return them if they are
+    :param f: Math function f(x)
+    :return: significant min/max endpoints in the form of (mins=[], maxes=[])
+    """
+    maxes = []
+    mins = []
+
+    #Get slopes of endpoints with points that has x differences of 3
+    start_slope = slope(0, 3, f=f)
+    end_slope = slope(252, 255, f=f)
+
+    # Check if start is a significant min/max
+    if start_slope > SMALL_SLOPE*2:
+        mins.append(0)
+    elif start_slope < SMALL_SLOPE*(-2):
+        maxes.append(0)
+
+    #Check if end is a significant min/max
+    if end_slope > SMALL_SLOPE*2:
+        maxes.append(0)
+    elif end_slope < SMALL_SLOPE*(-2):
+        mins.append(0)
+
+    return mins, maxes
+
+
+
+
 # Gets 2 points and returns the slope between them
-def slope(x1, y1, x2, y2):
-    return (y2-y1)/(x2-x1)
+def slope(pt1, pt2, f=None):
+    """
+    :param pt1: or (x1, y1) or just x1, depending on f
+    :param pt2: or (x2, y2) or just x2, depending on f
+    :param f: math function f(x), if None then pts are (x,y), if f is given then pts are just x
+    :return: The slope between pt1 and pt2
+    """
+    if f is None:
+        return (pt2[1]-pt1[1])/(pt2[0]-pt1[0])
+    else:
+        return (f[pt2]-f[pt1])/(pt2-pt1)
 
 
 # Gets rgb image and returns it without background
@@ -193,7 +249,7 @@ def hsv_differentiation(img, is_histogram, set_manually):
     h2Max = h1Max
 
     if is_histogram:
-        temp, temp, sMax, sMin, temp, temp = histogram(img)
+        temp, temp, sMin, sMax, temp, temp = histogram(img)
 
     if set_manually and not is_histogram:
         h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")

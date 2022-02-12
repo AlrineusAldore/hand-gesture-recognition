@@ -1,12 +1,14 @@
 from inspect import currentframe
 import matplotlib.pyplot as plt
 
+
 def get_line_num():
     return "line num: " + str(currentframe().f_back.f_lineno)
 
+
 def start_segmentation_plot(hist_h, hist_s, hist_v):
     """
-    :param hist_h: hue historgram
+    :param hist_h: hue histogram
     :param hist_s: saturation histogram
     :param hist_v: value histogram
     :return: None
