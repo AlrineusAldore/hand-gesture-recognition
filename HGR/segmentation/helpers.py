@@ -31,3 +31,17 @@ def end_segmentation_plot(h_range, s_range, v_range):
 
     plt.legend()
     plt.pause(0.001)
+
+
+# Gets 2 points and returns the slope between them
+def slope(pt1, pt2, f=None):
+    """
+    :param pt1: or (x1, y1) or just x1, depending on f
+    :param pt2: or (x2, y2) or just x2, depending on f
+    :param f: math function f(x), if None then pts are (x,y), if f is given then pts are just x
+    :return: The slope between pt1 and pt2
+    """
+    if f is None:
+        return (pt2[1]-pt1[1])/(pt2[0]-pt1[0])
+    else:
+        return (f[pt2]-f[pt1])/(pt2-pt1)

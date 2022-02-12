@@ -32,7 +32,7 @@ def main():
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
-    #analyze_capture(VID_NAME, 5, 0)  # Analyzing a video
+    #analyze_capture(VID_NAME, 2, 0)  # Analyzing a video
     analyze_capture(0, 0, 0)  # Analyzing camera
 
 
@@ -72,7 +72,7 @@ def analyze_capture(cap_path, frames_to_skip, app):
         blank_img[:] = 0, 0, 0
 
         # Separate hand from background through hsv difference
-        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY)
+        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
 
 
         img_transformed = general.distanceTransform(ready_binary)
@@ -123,7 +123,9 @@ def analyze_capture(cap_path, frames_to_skip, app):
         #cv2.imshow("stack", stack)
 
         ##start = time.time()
-        histo = fr.Frame([img, ready_binary, ready_img] + list(sgm.hsv_differentiation(img, True, False)))
+        histo = fr.Frame([img, ready_binary, ready_img] +
+                         list(sgm.hsv_differentiation(img, True, False, False))) #  +
+                         #list(sgm.hsv_differentiation(img, True, False, True))
         ##end = time.time()
         ##print("time for frame: ", end-start)
 
