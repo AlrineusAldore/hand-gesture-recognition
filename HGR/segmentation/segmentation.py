@@ -10,8 +10,8 @@ import time
 
 
 def histogram(img, plot_histo):
-    img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    h, s, v = img2[:, :, 0], img2[:, :, 1], img2[:, :, 2]
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h, s, v = img_hsv[:, :, 0], img_hsv[:, :, 1], img_hsv[:, :, 2]
 
     # Makes histograms of h, s, v accordingly
     hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
@@ -58,45 +58,40 @@ def analyze_histogram(hist, plot_histo, color, plot_name):
 def find_min_between_max(f, min_pts, max_pts):
     pts = sorted(min_pts + max_pts)
     # First and second highest max points
-    first = f.argmax()
-    second = f.argmin()  # Start with the lowest value
-    lowest = first  # Start with the highest value
-
-    # If there is only 1 significant max point then every value can be the hand
-    significant_max = 0
-    for x in max_pts:
-        if f[x] > NOT_MANY_PIXELS:
-            significant_max += 1
-
-    if len(max_pts) < 2 or significant_max < 2:
-        return 0, 255
+    abs_max = f.argmax()
+    second_highest = f.argmin()  # Start with the lowest value
+    lowest = abs_max  # Start with the highest value
 
     # Check how many max points have values above NOT_MANY_PIXELS
     high_max_count = 0
     for x in max_pts:
         if f[x] > NOT_MANY_PIXELS:
-            if x != first: # Get the last highest max that is not absolute max
-                second = x
+            if x != abs_max: # Get the last highest max that is not absolute max
+                second_highest = x
             high_max_count += 1
 
+    # If there is only 1 significant max point then every value can be the hand
+    if len(max_pts) < 2 or high_max_count < 2:
+        return get_range_of_max(f, abs_max, pts)
+
     # If all the other maxes are small (below NOT_MANY_PIXELS)
-    if second == f.argmin():
+    if second_highest == f.argmin():
         # Find second highest max point that is not adjacent to first highest
         prev = 0
         for x in max_pts:
-            if f[x] > f[second] and f[x] < f[first] and prev != first:
-                second = x
+            if f[x] > f[second_highest] and f[x] < f[abs_max] and prev != abs_max:
+                second_highest = x
 
             # Only account for prev if there are multiple high points that are not first
             if high_max_count > 2:
                 prev = x
 
-    if first < second:
-        left = first
-        right = second
+    if abs_max < second_highest:
+        left = abs_max
+        right = second_highest
     else:
-        left = second
-        right = first
+        left = second_highest
+        right = abs_max
 
     # Get minimums to the left and right of the 2 max points
     left_i = pts.index(left)
@@ -119,27 +114,58 @@ def find_min_between_max(f, min_pts, max_pts):
             lowest = x
 
     # Return the range of the second max point as it's most likely the hand
-    if first < second:
+    if abs_max < second_highest:
         return lowest, end
     else:
         return start, lowest
 
 
 
-def check_for_value(f, value, start=0, end=256):
+# Gets the range of a max point (left of it to right of it)
+def get_range_of_max(f, max, pts):
+    max_i = pts.index(max)
+
+    # Get min point / zero point to the left of max (whichever is closest to max)
+    start = check_for_value(f, 0, end=max, go_backwards=True)
+    if max_i != 0:
+        left_min = pts[max_i - 1]
+        if left_min > start:
+            start = left_min
+
+    # Get min point / zero point to the right of max (whichever is closest to max)
+    end = check_for_value(f, 0, start=max)
+    if max_i != len(pts) - 1:
+        right_min = pts[max_i + 1]
+        if right_min < end:
+            end = right_min
+
+    return start, end
+
+
+
+
+def check_for_value(f, value, start=0, end=256, go_backwards=False):
     """
     Function checks the first occurrence of value in function f(x) within the given range and returns it
     :param f: math function f(x) with x between 0 and 255
     :param value: wanted y value in function
     :param start: from when should we start
     :param end: when should we stop
+    :param go_backwards: Whether to check the first from the start or first from the end
     :return: the first x of the wanted y value
     """
-    res = end
-    for x in range(start, end):
-        if int(f[x]) == value:
-            res = x
-            break
+    if go_backwards:
+        res = start
+        for x in range(start, end):
+            if int(f[end-x]) == value:
+                res = end-x
+                break
+    else:
+        res = end
+        for x in range(start, end):
+            if int(f[x]) == value:
+                res = x
+                break
 
     return res
 
@@ -197,6 +223,7 @@ def get_useful_extrema(f):
 
 
 
+
 def check_for_endpoints_extrema(f):
     """
     Checks if endpoints of f(x) are significant min/max and return them if they are
@@ -218,9 +245,9 @@ def check_for_endpoints_extrema(f):
 
     #Check if end is a significant min/max
     if end_slope > SMALL_SLOPE*2:
-        maxes.append(0)
+        maxes.append(255)
     elif end_slope < SMALL_SLOPE*(-2):
-        mins.append(0)
+        mins.append(255)
 
     return mins, maxes
 
@@ -291,18 +318,18 @@ def hsv_differentiation(img, is_histogram, set_manually, is_val):
     opening_mask = cv2.morphologyEx(closing_mask, cv2.MORPH_OPEN, opening_kernel)
     opening_mask_res = cv2.bitwise_and(img, img, mask=opening_mask)
 
-    # use the masks to get avarage color
+    # use the masks to get average color
     average = cv2.mean(both_masks_res, both_masks)
     # Makes a new image for average color
     both_masks_average = img.copy()
     both_masks_average[:] = (average[0], average[1], average[2])
 
-    # use the masks to get avarage color
+    # use the masks to get average color
     average = cv2.mean(closing_mask_res, closing_mask)
     closing_mask_average = img.copy()
     closing_mask_average[:] = (average[0], average[1], average[2])
 
-    # use the masks to get avarage color
+    # use the masks to get average color
     average = cv2.mean(opening_mask_res, opening_mask)
     opening_mask_average = img.copy()
     opening_mask_average[:] = (average[0], average[1], average[2])
