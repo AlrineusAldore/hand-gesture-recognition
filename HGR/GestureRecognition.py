@@ -9,6 +9,7 @@ import helpers
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
 from cython_funcs import helpers_cy as cy
@@ -19,6 +20,10 @@ import time
 
 VID_NAME = "Videos\\handGesturesVid2.mp4"
 SET_VALUES_MANUALLY = False
+
+stage = [1]
+ranges = []
+clock_has_not_started = [True]
 
 
 def main():
@@ -85,40 +90,91 @@ def analyze_frame(img, cmds_handler, is_histo):
 
     if not is_histo:
         # Separate hand from background through hsv difference
-        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
+        img_hsv, ready_binary, ready_img, range = sgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
 
         stack, data = analyze_segmentated_img(ready_img, ready_binary)
         execute_commands(data, cmds_handler)
     else:
-        histo_stack = segmentate(img)
-
-        cv2.imshow("histo", histo_stack.to_viewable_stack(4))
+        stack = segmentate(img)
 
     #app.frame.panel.put_img(stack)
-    #cv2.imshow("stack", stack)
+    cv2.imshow("stack", stack.to_viewable_stack(2))
 
 
 
 def segmentate(img):
-    square_img, small = sgm.get_square(img)
+    stack = None
+    global ranges
 
+    # In stage 1, just show that we are preparing stage 2
+    if stage[0] == 1:
+        print("stage 1")
+        if clock_has_not_started[0]:
+            print("start clock of stage 1")
+            # Be in stage 1 for 3 seconds
+            t = threading.Thread(target=helpers.timer(6, stage, clock_has_not_started))
+            t.start()
+            print("end clock of stage 1")
+            clock_has_not_started[0] = False
+        stack = stage1(img)
+    # In stage 2, get the ranges through the histogram
+    elif stage[0] == 2:
+        print("stage 2")
+        if clock_has_not_started[0]:
+            print("start clock of stage 2")
+            # Be in stage 1 for 3 seconds
+            t = threading.Thread(helpers.timer(5, stage, clock_has_not_started))
+            t.start()
+            clock_has_not_started[0] = False
+        stack, range = stage2(img)
+        ranges.append(range)
+    # In stage 3, use the calculated range from the ranges
+    elif stage[0] == 3:
+        print("stage 3")
+        if clock_has_not_started[0]:
+            print("compute stage 3")
+            ranges = sgm.compute_best_range(ranges)
+            clock_has_not_started[0] = False
+        stack = stage3(img)
+
+
+    return stack
+
+
+
+def stage1(img):
+    color = (255, 0, 0) # stage 1 is blue
+    square_img, small = sgm.get_square(img, color)
+
+    stack = stk.Stack([square_img, small])
+
+    return stack
+
+
+def stage2(img):
+    color = (0, 255, 0) #stage 2 is green
+    square_img, small = sgm.get_square(img, color)
+
+    small_hsv, small_no_bg, small_binary, range = list(sgm.hsv_differentiation(small, is_histo=True))
+
+    stack = stk.Stack([square_img, small, small_hsv, small_no_bg, small_binary])
+
+    return stack, range
+
+
+def stage3(img):
     # Separate hand from background through hsv difference
-    img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(small, False, SET_VALUES_MANUALLY, False)
+    img_hsv, binary, img_no_bg, r = sgm.hsv_differentiation(img, has_params=True, params=ranges)
 
-    # value_including_hist = list(sgm.hsv_differentiation(img, True, False, True))
-    region_seg = list(rsgm.region_based_segmentation(small))
+    region_seg = list(rsgm.region_based_segmentation(img))
     #vis = cv2.hconcat(region_seg)
     normalized = (region_seg[0]*255).astype(np.uint8)
 
+    stack = stk.Stack([img, img_hsv, binary, img_no_bg])
+    stack.append(normalized)
 
+    return stack
 
-    histo_stack = stk.Stack([small, ready_binary, ready_img] +
-                     list(sgm.hsv_differentiation(small, True, False, False)))
-    histo_stack.append(normalized)
-    histo_stack.append(square_img)
-
-
-    return histo_stack
 
 
 

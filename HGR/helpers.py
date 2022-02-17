@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 
 
 def empty(a):
@@ -66,17 +67,8 @@ def draw_contours(img, imgContour, imgCanvas):
     return significant_contours
 
 
-def slow(imgTransformed):
-    h = imgTransformed.shape[0]
-    w = imgTransformed.shape[1]
+def timer(seconds, stage, not_started_clock):
+    time.sleep(seconds)
 
-    skeleton = imgTransformed.copy()
-
-    for y in range(0, h):
-        for x in range(0, w):
-            if imgTransformed[y, x] == 240:
-                skeleton[y, x] = imgTransformed[y, x]
-            else:
-                skeleton[y, x] = 0
-
-    return skeleton
+    stage[0] += 1
+    not_started_clock[0] = True

@@ -264,9 +264,10 @@ def check_for_endpoints_extrema(f):
 
 # Gets rgb image and returns it without background
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
-def hsv_differentiation(img, is_histogram, set_manually, is_val):
+def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None):
     # Color
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    range = ()
 
     # HSV
     h1Min = 0
@@ -278,12 +279,25 @@ def hsv_differentiation(img, is_histogram, set_manually, is_val):
     h2Min = h1Min
     h2Max = h1Max
 
-    if is_val:
+    if has_params:
+        h1Min = params[0]
+        h1Max = params[1]
+        sMin = params[2]
+        sMax = params[3]
+        vMin = params[4]
+        vMax = params[5]
+        h2Min = h1Min
+        h2Max = h1Max
+    elif is_val:
         h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, True)
-    elif is_histogram:
+        h2Min = h1Min
+        h2Max = h1Max
+    elif is_histo:
         h1Min, h1Max, sMin, sMax, temp, temp = histogram(img, PLOT_HISTOGRAMS)
+        h2Min = h1Min
+        h2Max = h1Max
 
-    if set_manually and not is_histogram:
+    if manually and not is_histo:
         h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")
         h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")
         h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")
@@ -293,6 +307,8 @@ def hsv_differentiation(img, is_histogram, set_manually, is_val):
         vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
         vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
 
+    if (is_histo or is_val) and not has_params:
+        range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
 
     # HSV
     lower = np.array([h1Min, sMin, vMin])
@@ -344,21 +360,33 @@ def hsv_differentiation(img, is_histogram, set_manually, is_val):
     opening_mask_average[:] = (average[0], average[1], average[2])
 
 
-    return (img_hsv, opening_mask, opening_mask_res)
+    return (img_hsv, opening_mask, opening_mask_res, range)
 
 
 
 
-def get_square(img):
+def get_square(img, color):
     divisor = 2.5
     height, width = img.shape[:2]
     h, w = int(height//divisor), int(width//divisor)
 
     square_img = img.copy()
-    square_img = cv2.rectangle(square_img, (width-w,height-h), (width, height), (0, 255, 0), 1)
+    square_img = cv2.rectangle(square_img, (width-w,height-h), (width, height), color, 1)
     small = img[height-h:height, width-w:width]
-
-    #cv2.imshow("smol", small)
 
     return square_img, small
 
+
+
+def compute_best_range(ranges):
+    ncols = 6
+    nrows = len(ranges)
+    results = ncols*[0] # avgs per column
+    print(nrows)
+    nelem = float(nrows)
+    for col in range(ncols):
+        for row in range(nrows):
+            results[col] += ranges[row][col]
+        results[col] /= nelem
+
+    return results
