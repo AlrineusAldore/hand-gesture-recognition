@@ -92,7 +92,7 @@ def analyze_frame(img, cmds_handler, is_histo):
     else:
         histo_stack = segmentate(img)
 
-        cv2.imshow("histo", histo_stack.to_viewable_stack(1.5))
+        cv2.imshow("histo", histo_stack.to_viewable_stack(4))
 
     #app.frame.panel.put_img(stack)
     #cv2.imshow("stack", stack)
@@ -100,23 +100,22 @@ def analyze_frame(img, cmds_handler, is_histo):
 
 
 def segmentate(img):
+    square_img, small = sgm.get_square(img)
+
     # Separate hand from background through hsv difference
-    img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
+    img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(small, False, SET_VALUES_MANUALLY, False)
 
     # value_including_hist = list(sgm.hsv_differentiation(img, True, False, True))
-    region_seg = list(rsgm.region_based_segmentation(img))
+    region_seg = list(rsgm.region_based_segmentation(small))
     #vis = cv2.hconcat(region_seg)
     normalized = (region_seg[0]*255).astype(np.uint8)
-    normalized = cv2.resize(normalized, None, fx=3, fy=3, interpolation=cv2.INTER_AREA)
 
 
 
-    ##start = time.time()
-    histo_stack = stk.Stack([img, ready_binary, ready_img] +
-                     list(sgm.hsv_differentiation(img, True, False, False)))
+    histo_stack = stk.Stack([small, ready_binary, ready_img] +
+                     list(sgm.hsv_differentiation(small, True, False, False)))
     histo_stack.append(normalized)
-    ##end = time.time()
-    ##print("time for segmentation: ", end-start)
+    histo_stack.append(square_img)
 
 
     return histo_stack

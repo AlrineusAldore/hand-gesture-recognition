@@ -72,7 +72,7 @@ def find_min_between_max(f, min_pts, max_pts):
 
     # If there is only 1 significant max point then every non-zero value can be the hand
     if len(max_pts) < 2 or high_max_count < 2:
-        return get_range_of_max(f, abs_max, pts)
+        return get_range_of_max(f, abs_max, pts, max_pts)
 
     # If all the other maxes are small (below NOT_MANY_PIXELS)
     if second_highest == f.argmin():
@@ -108,8 +108,8 @@ def find_min_between_max(f, min_pts, max_pts):
     else:
         end = pts[right_i + 1]"""
 
-    start, nothing = get_range_of_max(f, left, pts)
-    nothing, end = get_range_of_max(f, right, pts)
+    start, nothing = get_range_of_max(f, left, pts, max_pts)
+    nothing, end = get_range_of_max(f, right, pts, max_pts)
 
     # Get lowest min between maxes
     for x in min_pts:
@@ -125,8 +125,14 @@ def find_min_between_max(f, min_pts, max_pts):
 
 
 # Gets the range of a max point (left of it to right of it)
-def get_range_of_max(f, max, pts):
-    max_i = pts.index(max)
+def get_range_of_max(f, max, pts, max_pts):
+    try:
+        max_i = pts.index(max)
+    except:
+        # If max is from original maxima list and not in the processed list then take closest maxima of it
+        max = min(max_pts, key=lambda x:abs(x-max))
+        max_i = pts.index(max)
+
 
     # Get min point / zero point to the left of max (whichever is closest to max)
     start = check_for_value(f, 0, end=max, go_backwards=True)
@@ -339,3 +345,20 @@ def hsv_differentiation(img, is_histogram, set_manually, is_val):
 
 
     return (img_hsv, opening_mask, opening_mask_res)
+
+
+
+
+def get_square(img):
+    divisor = 2.5
+    height, width = img.shape[:2]
+    h, w = int(height//divisor), int(width//divisor)
+
+    square_img = img.copy()
+    square_img = cv2.rectangle(square_img, (width-w,height-h), (width, height), (0, 255, 0), 1)
+    small = img[height-h:height, width-w:width]
+
+    #cv2.imshow("smol", small)
+
+    return square_img, small
+
