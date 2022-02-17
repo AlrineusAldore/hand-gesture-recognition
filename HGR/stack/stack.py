@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 
-class Frame():
+class Stack():
     def __init__(self, lst=None, size=(1,1)):
         if lst is None:
             lst = []
@@ -21,22 +21,23 @@ class Frame():
         cols = size[1]
 
         if rows*cols >= len(self.lst):
+            filler_img = self.__create_filler_img()
             self.img_stack = []
             for i in range(rows):
                 temp = []
                 for j in range(cols):
-                    # After lst runs out, start copying the first image to fill up space
+                    # After lst runs out, start copying filler image to fill up space
                     try:
                         temp.append(self.lst[i*cols + j])
                     except:
-                        temp.append(self.lst[0])
+                        temp.append(filler_img)
                 self.img_stack.append(temp)
             self.size = (rows, cols)
         else:
             self.auto_organize()
 
 
-    # Automatically organizes stack as approximately sqrt(len)*sqrt(len)
+    # Automatically organizes stack with size of approximately sqrt(len)*sqrt(len)
     def auto_organize(self):
         #Get root of length and fractional digits
         length = len(self.lst)
@@ -64,14 +65,23 @@ class Frame():
         self.organize(self.size)
 
 
-    # Resizes frame stack
+    # Resizes stack stack
     def resize(self, size):
         if self.lst is not None:
             self.organize(size)
 
 
+    def __create_filler_img(self):
+        filler_img = self.lst[0].copy()
+        filler_img[:] = 0, 0, 0
+
+        cv2.putText(filler_img, "filler", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
+
+        return filler_img
+
+
     #turns the img_stack into an actual stack of imgs with size of scale
-    def stack(self, scale):
+    def to_viewable_stack(self, scale):
         img_array = self.img_stack.copy()
 
         rows = len(img_array)
