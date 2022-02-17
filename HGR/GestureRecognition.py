@@ -7,6 +7,7 @@ from analysis import mouse_handler
 import analysis.general as general
 import helpers
 import cv2
+import numpy as np
 import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
@@ -64,18 +65,34 @@ def analyze_capture(cap_path, frames_to_skip, app):
                 continue
             n = 0
 
-        frame = fr.Frame()
+        analyze_frame(img, data, cmds_handler, True)
+        #cv2.waitKey(0)
 
-        img = img[160:490, 0:330]
-        img = cv2.resize(img, None, fx=1 / 3, fy=1 / 3, interpolation=cv2.INTER_AREA)
+        ##end_tot = time.time()
+        ##print("time for everything:", end_tot-start_tot)
+        ##print("percentage of time of frame compared to everything:", str(int((end-start)/(end_tot-start_tot))*100) + "%")
 
-        blank_img = img.copy()
-        blank_img[:] = 0, 0, 0
+        #if 'q' is pressed, close all windows and break loop
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            break
 
-        # Separate hand from background through hsv difference
-        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
 
 
+
+def analyze_frame(img, data, cmds_handler, is_histo):
+    frame = fr.Frame()
+
+    #img = img[160:490, 0:330]
+    img = cv2.resize(img, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_AREA)
+
+    blank_img = img.copy()
+    blank_img[:] = 0, 0, 0
+
+    # Separate hand from background through hsv difference
+    img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
+
+    if not is_histo:
         img_transformed = general.distanceTransform(ready_binary)
 
         lower_points_img, fings_count_pts = pts.find_lower_points(ready_img)
@@ -120,32 +137,110 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         stack = frame.stack(1.5)
 
-        #app.frame.panel.put_img(stack)
-        #cv2.imshow("stack", stack)
+    #app.frame.panel.put_img(stack)
+    #cv2.imshow("stack", stack)
 
-        # value_including_hist = list(sgm.hsv_differentiation(img, True, False, True))
-        region_seg = list(rsgm.region_based_segmentation(img))
-        #vis = cv2.hconcat(region_seg)
-        region_seg[0] = cv2.resize(region_seg[0], None, fx=3, fy=3, interpolation=cv2.INTER_AREA)
-        cv2.imshow("hihi", region_seg[0])
+    # value_including_hist = list(sgm.hsv_differentiation(img, True, False, True))
+    region_seg = list(rsgm.region_based_segmentation(img))
+    #vis = cv2.hconcat(region_seg)
+    normalized = (region_seg[0]*255).astype(np.uint8)
+    normalized = cv2.resize(normalized, None, fx=3, fy=3, interpolation=cv2.INTER_AREA)
 
-        ##start = time.time()
-        histo = fr.Frame([img, ready_binary, ready_img] +
-                         list(sgm.hsv_differentiation(img, True, False, False)))
-        ##end = time.time()
-        ##print("time for frame: ", end-start)
 
-        cv2.imshow("histo", histo.stack(2))
-        #cv2.waitKey(0)
 
-        ##end_tot = time.time()
-        ##print("time for everything:", end_tot-start_tot)
-        ##print("percentage of time of frame compared to everything:", str(int((end-start)/(end_tot-start_tot))*100) + "%")
+    ##start = time.time()
+    histo = fr.Frame([img, ready_binary, ready_img] +
+                     list(sgm.hsv_differentiation(img, True, False, False)))
+    histo.append(normalized)
+    ##end = time.time()
+    ##print("time for frame: ", end-start)
 
-        #if 'q' is pressed, close all windows and break loop
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            break
+    cv2.imshow("histo", histo.stack(1.5))
+
+
+
+
+def segmentate(img):
+    # Separate hand from background through hsv difference
+    img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
+
+    # value_including_hist = list(sgm.hsv_differentiation(img, True, False, True))
+    region_seg = list(rsgm.region_based_segmentation(img))
+    #vis = cv2.hconcat(region_seg)
+    normalized = (region_seg[0]*255).astype(np.uint8)
+    normalized = cv2.resize(normalized, None, fx=3, fy=3, interpolation=cv2.INTER_AREA)
+
+
+
+    ##start = time.time()
+    histo = fr.Frame([img, ready_binary, ready_img] +
+                     list(sgm.hsv_differentiation(img, True, False, False)))
+    histo.append(normalized)
+    ##end = time.time()
+    ##print("time for segmentation: ", end-start)
+
+
+
+
+def analyze_segmentated_img(img, binary):
+    frame = fr.Frame()
+
+    blank_img = img.copy()
+    blank_img[:] = 0, 0, 0
+
+    img_transformed = general.distanceTransform(binary)
+
+    lower_points_img, fings_count_pts = pts.find_lower_points(img)
+    frame.append(lower_points_img)
+
+    # Find the center of the hand from the distance transformation
+    thresh, center_img = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
+
+    circle = fings.getCircle(img_transformed)
+
+    fingers = cv2.subtract(binary, circle, mask=None)
+    fingers, fings_count = fings.find_fingers(fingers)
+    cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+
+    img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), binary)
+    img_pts = mouse_handler.show_north_extreme_points(img.copy(), binary, fings_count)
+    frame.append(img)
+
+
+
+    frame.lst += [img_transformed, center_img, circle, fingers]
+    frame.lst += [binary, img]
+    frame.lst += [img_hsv_pts, img_pts]
+    frame.auto_organize()
+
+
+    #  Add number of fingers up to data
+    if (fings_count == fings_count_pts):
+        data["fings_count"] = fings_count
+    else:
+        data["fings_count"] = None
+
+
+    #  Do command
+    cmds_handler.update_data(data)
+    result = cmds_handler.check_commands()
+
+    #  Makes an image showing only the used command
+    command_img = blank_img.copy()
+    cv2.putText(command_img, result, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
+    frame.append(command_img)
+
+    stack = frame.stack(1.5)
+
+
+
+
+
+def execute_commands(data, cmds_handler):
+
+
+
+
 
 
 

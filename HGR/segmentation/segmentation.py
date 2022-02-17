@@ -70,7 +70,7 @@ def find_min_between_max(f, min_pts, max_pts):
                 second_highest = x
             high_max_count += 1
 
-    # If there is only 1 significant max point then every value can be the hand
+    # If there is only 1 significant max point then every non-zero value can be the hand
     if len(max_pts) < 2 or high_max_count < 2:
         return get_range_of_max(f, abs_max, pts)
 
@@ -94,7 +94,7 @@ def find_min_between_max(f, min_pts, max_pts):
         right = abs_max
 
     # Get minimums to the left and right of the 2 max points
-    left_i = pts.index(left)
+    """left_i = pts.index(left)
     right_i = pts.index(right)
 
     # Get min point / zero point to the left of left max
@@ -106,7 +106,10 @@ def find_min_between_max(f, min_pts, max_pts):
     if right_i == len(pts) - 1:
         end = check_for_value(f, 0, start=right)
     else:
-        end = pts[right_i + 1]
+        end = pts[right_i + 1]"""
+
+    start, nothing = get_range_of_max(f, left, pts)
+    nothing, end = get_range_of_max(f, right, pts)
 
     # Get lowest min between maxes
     for x in min_pts:
