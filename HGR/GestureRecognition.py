@@ -93,49 +93,8 @@ def analyze_frame(img, data, cmds_handler, is_histo):
     img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, False, SET_VALUES_MANUALLY, False)
 
     if not is_histo:
-        img_transformed = general.distanceTransform(ready_binary)
-
-        lower_points_img, fings_count_pts = pts.find_lower_points(ready_img)
-        frame.append(lower_points_img)
-
-        # Find the center of the hand from the distance transformation
-        thresh, center_img = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
-
-        circle = fings.getCircle(img_transformed)
-
-        fingers = cv2.subtract(ready_binary, circle, mask=None)
-        fingers, fings_count = fings.find_fingers(fingers)
-        cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
-
-        img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), ready_binary)
-        img_pts = mouse_handler.show_north_extreme_points(img.copy(), ready_binary, fings_count)
-        frame.append(img)
-
-
-
-        frame.lst += [img_transformed, center_img, circle, fingers]
-        frame.lst += [img_hsv, ready_binary, ready_img]
-        frame.lst += [img_hsv_pts, img_pts]
-        frame.auto_organize()
-
-
-        #  Add number of fingers up to data
-        if (fings_count == fings_count_pts):
-            data["fings_count"] = fings_count
-        else:
-            data["fings_count"] = None
-
-
-        #  Do command
-        cmds_handler.update_data(data)
-        result = cmds_handler.check_commands()
-
-        #  Makes an image showing only the used command
-        command_img = blank_img.copy()
-        cv2.putText(command_img, result, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
-        frame.append(command_img)
-
-        stack = frame.stack(1.5)
+        stack, data = analyze_segmentated_img(ready_img, ready_binary)
+        execute_commands(data, cmds_handler)
 
     #app.frame.panel.put_img(stack)
     #cv2.imshow("stack", stack)
@@ -183,6 +142,7 @@ def segmentate(img):
 
 
 def analyze_segmentated_img(img, binary):
+    data = {}
     frame = fr.Frame()
 
     blank_img = img.copy()
@@ -221,24 +181,23 @@ def analyze_segmentated_img(img, binary):
         data["fings_count"] = None
 
 
-    #  Do command
-    cmds_handler.update_data(data)
-    result = cmds_handler.check_commands()
-
-    #  Makes an image showing only the used command
-    command_img = blank_img.copy()
-    cv2.putText(command_img, result, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
-    frame.append(command_img)
-
-    stack = frame.stack(1.5)
+    return frame, data
 
 
 
 
 
 def execute_commands(data, cmds_handler):
+     #  Do command
+    cmds_handler.update_data(data)
+    result = cmds_handler.check_commands()
 
+    #  Makes an image showing only the used command
+    #command_img = blank_img.copy()
+    #cv2.putText(command_img, result, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
+    #frame.append(command_img)
 
+    return result
 
 
 
