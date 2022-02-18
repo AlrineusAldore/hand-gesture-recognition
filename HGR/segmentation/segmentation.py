@@ -94,19 +94,6 @@ def find_min_between_max(f, min_pts, max_pts):
         right = abs_max
 
     # Get minimums to the left and right of the 2 max points
-    """left_i = pts.index(left)
-    right_i = pts.index(right)
-
-    # Get min point / zero point to the left of left max
-    if left_i == 0:
-        start = check_for_value(f, 0, end=left)
-    else:
-        start = pts[left_i - 1]
-    # Get min point / zero point to the right of right max
-    if right_i == len(pts) - 1:
-        end = check_for_value(f, 0, start=right)
-    else:
-        end = pts[right_i + 1]"""
 
     start, nothing = get_range_of_max(f, left, pts, max_pts)
     nothing, end = get_range_of_max(f, right, pts, max_pts)
@@ -264,7 +251,7 @@ def check_for_endpoints_extrema(f):
 
 # Gets rgb image and returns it without background
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
-def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None):
+def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None, get_range=False):
     # Color
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     range = ()
@@ -307,7 +294,7 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
         vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
 
-    if (is_histo or is_val) and not has_params:
+    if get_range:
         range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
 
     # HSV
@@ -379,6 +366,10 @@ def get_square(img, color):
 
 
 def compute_best_range(ranges):
+    print("initial ranges:")
+    for rang in ranges:
+        print(rang)
+        
     ncols = 6
     nrows = len(ranges)
     results = ncols*[0] # avgs per column
@@ -389,4 +380,5 @@ def compute_best_range(ranges):
             results[col] += ranges[row][col]
         results[col] /= nelem
 
+    print("\n\nresults:\n", results)
     return results

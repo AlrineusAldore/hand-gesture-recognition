@@ -108,31 +108,28 @@ def segmentate(img):
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
-        print("stage 1")
         if clock_has_not_started[0]:
-            print("start clock of stage 1")
             # Be in stage 1 for 3 seconds
-            t = threading.Thread(target=helpers.timer(6, stage, clock_has_not_started))
-            t.start()
-            print("end clock of stage 1")
-            clock_has_not_started[0] = False
+            #t = threading.Thread(target=helpers.timer, args=(6, stage, clock_has_not_started))
+            #t.start()
+            if cv2.waitKey(1) & 0xFF == ord('g'):
+                print("g pressed")
+                stage[0] += 1
+                clock_has_not_started[0] = True
+            #clock_has_not_started[0] = False
         stack = stage1(img)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
-        print("stage 2")
         if clock_has_not_started[0]:
-            print("start clock of stage 2")
             # Be in stage 1 for 3 seconds
-            t = threading.Thread(helpers.timer(5, stage, clock_has_not_started))
+            t = threading.Thread(target=helpers.timer, args=(5, stage, clock_has_not_started))
             t.start()
             clock_has_not_started[0] = False
         stack, range = stage2(img)
         ranges.append(range)
     # In stage 3, use the calculated range from the ranges
     elif stage[0] == 3:
-        print("stage 3")
         if clock_has_not_started[0]:
-            print("compute stage 3")
             ranges = sgm.compute_best_range(ranges)
             clock_has_not_started[0] = False
         stack = stage3(img)
@@ -146,7 +143,9 @@ def stage1(img):
     color = (255, 0, 0) # stage 1 is blue
     square_img, small = sgm.get_square(img, color)
 
-    stack = stk.Stack([square_img, small])
+    small_hsv, small_no_bg, small_binary, range = list(sgm.hsv_differentiation(small, is_histo=True))
+
+    stack = stk.Stack([square_img, small, small_hsv, small_no_bg, small_binary])
 
     return stack
 
@@ -155,7 +154,7 @@ def stage2(img):
     color = (0, 255, 0) #stage 2 is green
     square_img, small = sgm.get_square(img, color)
 
-    small_hsv, small_no_bg, small_binary, range = list(sgm.hsv_differentiation(small, is_histo=True))
+    small_hsv, small_no_bg, small_binary, range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True))
 
     stack = stk.Stack([square_img, small, small_hsv, small_no_bg, small_binary])
 
