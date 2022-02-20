@@ -46,11 +46,20 @@ def analyze_histogram(hist, plot_histo, color, plot_name):
         x = list(range(0, 256))
         plt.plot(x, yhat2, color=color, label=plot_name)
 
-    mins, maxes = get_useful_extrema(yhat2)
-    start, end = find_min_between_max(yhat2, mins, maxes)
+    minima, maxima = get_useful_extrema(yhat2)
+    start, end = find_min_between_max(yhat2, minima, maxima)
+    start2, end2 = get_highest_max_range(yhat2, minima, maxima)
 
     return start, end
 
+
+
+def get_highest_max_range(f, min_pts, max_pts):
+    pts = sorted(min_pts + max_pts)
+    abs_max = f.argmax()
+    start, end = get_range_of_max(f, abs_max, pts, max_pts)
+
+    return start, end
 
 
 # f - function f(x)
@@ -102,8 +111,8 @@ def find_min_between_max(f, min_pts, max_pts):
         if f[x] < f[lowest] and x > start and x < end:
             lowest = x
 
-    # Return the range of the second max point as it's most likely the hand
-    if abs_max < second_highest:
+    # Return the range of the highest max point as it's most likely the hand
+    if abs_max > second_highest:
         return lowest, end
     else:
         return start, lowest
@@ -122,10 +131,9 @@ def find_min_between_max(f, min_pts, max_pts):
 
 # Gets rgb image and returns it without background
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
-def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None, get_range=False):
+def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None, get_range=False, seg_type=0):
     # Color
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    range = ()
 
     # HSV
     h1Min = 0
@@ -151,7 +159,7 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         h2Min = h1Min
         h2Max = h1Max
     elif is_histo:
-        h1Min, h1Max, sMin, sMax, temp, temp = histogram(img, PLOT_HISTOGRAMS)
+        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, PLOT_HISTOGRAMS)
         h2Min = h1Min
         h2Max = h1Max
 
@@ -165,8 +173,29 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
         vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
 
+    range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
+
+    opening_mask, opening_mask_res = mask_range(img, range, (h2Min, h2Max))
+
+    result = [img_hsv, opening_mask, opening_mask_res]
+
     if get_range:
-        range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
+        result.append(range)
+
+    return tuple(result)
+
+
+
+def mask_range(img, range, hue2):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h1Min = range[0]
+    h1Max = range[1]
+    sMin = range[2]
+    sMax = range[3]
+    vMin = range[4]
+    vMax = range[5]
+    h2Min = hue2[0]
+    h2Max = hue2[1]
 
     # HSV
     lower = np.array([h1Min, sMin, vMin])
@@ -217,8 +246,8 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
     opening_mask_average = img.copy()
     opening_mask_average[:] = (average[0], average[1], average[2])
 
+    return opening_mask, opening_mask_res
 
-    return (img_hsv, opening_mask, opening_mask_res, range)
 
 
 
@@ -236,20 +265,36 @@ def get_square(img, color):
 
 
 
+# Computes the average value of each column
 def compute_best_range(ranges):
     print("initial ranges:")
     for rang in ranges:
         print(rang)
 
+    new_arr = []
     ncols = 6
     nrows = len(ranges)
-    results = ncols*[0] # avgs per column
     print(nrows)
-    nelem = float(nrows)
-    for col in range(ncols):
-        for row in range(nrows):
-            results[col] += ranges[row][col]
-        results[col] /= nelem
 
-    print("\n\nresults:\n", results)
-    return results
+    for col in range(ncols):
+        new_arr.append([])
+        for row in range(nrows):
+            new_arr[col].append(ranges[row][col])
+
+    print("\nnew_arr:")
+    avrg = []
+    edges = []
+    is_min = True
+    for row in new_arr:
+        print(row)
+        avrg.append(sum(row)/len(row))
+        if is_min:
+            edges.append(min(row))
+        else:
+            edges.append(max(row))
+        is_min = not is_min
+
+    print("\navrg:\n", avrg)
+    print("\nedges:\n", edges)
+
+    return avrg, edges
