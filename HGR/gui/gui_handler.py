@@ -1,59 +1,47 @@
 from gui.constants import *
+from gui.capture_panel import *
+from gui.control_panel import *
 import cv2
+import matplotlib
 import numpy as np
 import wx
 
 
-class MyApp(wx.App):
+class main_panel(wx.Frame):
     def __init__(self):
-        super().__init__(clearSigInt=True)
+        capture = cv2.VideoCapture(0)
+        ret, frame = capture.read()
+        height, width = frame.shape[:2]
+        wx.Frame.__init__(self, parent=None, title="main", size=(width*2, height))
 
-        self.init_frame()
+        splitter = wx.SplitterWindow(self)
+        top = capture_panel(splitter, capture)
+        bottom = control_panel(splitter, capture)
 
-    def init_frame(self):
-        self.frame = MyFrame(parent=None, title="framu", pos=(500, 500))
-        self.frame.Show()
+        splitter.SplitVertically(top, bottom)
+        splitter.SetMinimumPaneSize(width)
 
-
-
-class MyFrame(wx.Frame):
-    def __init__(self, parent, title, pos):
-        super().__init__(parent=parent, title=title, pos=pos)
-
-        self.panel = MyPanel(parent=self)
-
-
-
-class MyPanel(wx.Panel):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        #text = "Put your hand in the square for five seconds after pressing the button"
-        #self.welcomeText = wx.StaticText(self, id=wx.ID_ANY, label=text, pos=(50, 50))
-
-    def put_img(self, img, coords=(0,0)):
-        img = cvimage_to_wx(img)
-        dc = wx.BufferedPaintDC(self)
-        dc.Clear()
-        dc.DrawBitmap(img, coords)
-        #self.currentBitmap = img
-        #self.Refresh()
-        #wx.PaintDC.DrawBitmap(img)
-        #wx.StaticBitmap(self, -1, img, coords, (img.GetWidth(), img.GetHeight()))
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+    def OnCloseWindow(self, e):
+        dial = wx.MessageDialog(None, "Are you sure you want to exit?", 'Question',
+                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        ret = dial.ShowModal()
+        if ret == wx.ID_YES:
+            self.Destroy()
+        else:
+            e.Veto()
 
 
 def make_gui():
-    app = MyApp()
-    #app.MainLoop()
-
+    app = wx.App()
+    frame = main_panel()
+    frame.Show()
+    app.MainLoop()
     return app
 
 
 def update_img(img):
     pass
-
-
-
 
 
 def cvimage_to_wx(cv2_image):
