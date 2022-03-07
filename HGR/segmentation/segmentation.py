@@ -111,8 +111,8 @@ def find_min_between_max(f, min_pts, max_pts):
         if f[x] < f[lowest] and x > start and x < end:
             lowest = x
 
-    # Return the range of the highest max point as it's most likely the hand
-    if abs_max > second_highest:
+    # Return the range of the second max point as it's most likely the hand
+    if abs_max < second_highest:
         return lowest, end
     else:
         return start, lowest
@@ -247,7 +247,6 @@ def mask_range(img, range, hue2):
     opening_mask_average[:] = (average[0], average[1], average[2])
 
     return opening_mask, opening_mask_res
-
 
 
 
