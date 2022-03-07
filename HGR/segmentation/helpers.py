@@ -8,17 +8,18 @@ def get_line_num():
     return "line num: " + str(currentframe().f_back.f_lineno)
 
 
-def start_segmentation_plot(hist_h, hist_s, hist_v):
+def start_segmentation_plot(hist_h, hist_s, hist_v, colors_space):
     """
     :param hist_h: hue histogram
     :param hist_s: saturation histogram
     :param hist_v: value histogram
+    :param colors_space: name of the color space
     :return: None
     """
     plt.cla()
-    plt.plot(hist_h, color='r', label="h")
-    plt.plot(hist_s, color='g', label="s")
-    plt.plot(hist_v, color='b', label="v")
+    plt.plot(hist_h, color='r', label=colors_space[0])
+    plt.plot(hist_s, color='g', label=colors_space[1])
+    plt.plot(hist_v, color='b', label=colors_space[2])
 
 
 def end_segmentation_plot(h_range, s_range, v_range):
@@ -145,6 +146,7 @@ def get_useful_extrema(f):
     maxima = signal.argrelmax(f)[0].tolist()
 
     pts = sorted(minima+maxima)
+    pts_copy = pts.copy() #for debugging purposes
 
     # Go through all pts except first and last
     for i in range(1, len(pts)-1):
@@ -165,7 +167,13 @@ def get_useful_extrema(f):
                 a.remove(pts[i])  # Remove useless A point
                 # Replace 2 B points with 1 B point in the middle
                 mid = ((pts[i-1]+pts[i+1]))//2
-                b.remove(pts[i+1])
+                try:
+                    b.remove(pts[i+1])
+                except Exception as e:
+                    print("breakpoint this exception. i =", i)
+                    print("e:", repr(e))
+                    print("\npts at the start:",pts_copy)
+                    print("pts at the error:",pts)
                 b[:] = [mid if x==pts[i-1] else x for x in b]  # Change pts[i-1]'s value to mid
 
     # If endpoints are found to be significant min/max, then add them to minima/maxima accordingly

@@ -8,29 +8,34 @@ from itertools import chain
 import time
 
 
-def histogram(img, plot_histo):
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    h, s, v = img_hsv[:, :, 0], img_hsv[:, :, 1], img_hsv[:, :, 2]
+def histogram(img, plot_histo, colors_space):
+    """
+    :param img: converted color space img
+    :param plot_histo: to plot a histogram or not
+    :param colors_space: name of the colors space
+    :return: range of values
+    """
+    val1, val2, val3 = img[:, :, 0], img[:, :, 1], img[:, :, 2]
 
     # Makes histograms of h, s, v accordingly
-    hist_h = cv2.calcHist([h], [0], None, [256], [0, 256])
-    hist_s = cv2.calcHist([s], [0], None, [256], [0, 256])
-    hist_v = cv2.calcHist([v], [0], None, [256], [0, 256])
+    hist1 = cv2.calcHist([val1], [0], None, [256], [0, 256])
+    hist2 = cv2.calcHist([val2], [0], None, [256], [0, 256])
+    hist3 = cv2.calcHist([val3], [0], None, [256], [0, 256])
 
     if plot_histo:
-        start_segmentation_plot(hist_h, hist_s, hist_v)
+        start_segmentation_plot(hist1, hist2, hist3, colors_space)
 
-    h_start, h_end = analyze_histogram(hist_h, plot_histo, 'purple', "smooth h")
-    s_start, s_end = analyze_histogram(hist_s, plot_histo, 'orange', "smooth s")
-    v_start, v_end = analyze_histogram(hist_v, plot_histo, 'cyan', "smooth v")
+    start1, end1 = analyze_histogram(hist1, plot_histo, 'purple', "smooth "+colors_space[0])
+    start2, end2 = analyze_histogram(hist2, plot_histo, 'orange', "smooth "+colors_space[1])
+    start3, end3 = analyze_histogram(hist3, plot_histo, 'cyan', "smooth "+colors_space[2])
 
     if plot_histo:
         #start = time.time()
-        end_segmentation_plot((h_start, h_end), (s_start, s_end), (v_start, v_end))
+        end_segmentation_plot((start1, end1), (start2, end2), (start3, end3))
         #end = time.time()
         #print("time for plot: ", end-start)
 
-    return h_start, h_end, s_start, s_end, v_start, v_end
+    return start1, end1, start2, end2, start3, end3
 
 
 
@@ -111,8 +116,8 @@ def find_min_between_max(f, min_pts, max_pts):
         if f[x] < f[lowest] and x > start and x < end:
             lowest = x
 
-    # Return the range of the second max point as it's most likely the hand
-    if abs_max < second_highest:
+    # Return the range of the highest max point as it's most likely the hand
+    if abs_max > second_highest:
         return lowest, end
     else:
         return start, lowest
@@ -120,9 +125,8 @@ def find_min_between_max(f, min_pts, max_pts):
 
 
 
-
-
-
+def lab_segmentation(img):
+    lab_img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
 
 
@@ -134,6 +138,14 @@ def find_min_between_max(f, min_pts, max_pts):
 def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None, get_range=False, seg_type=0):
     # Color
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    lab_img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+
+    if seg_type == 1:
+        img2 = lab_img
+    elif seg_type == 2:
+        img2 = img.copy()
+    else:
+        img2 = img_hsv
 
     # HSV
     h1Min = 0
@@ -154,30 +166,38 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         vMax = params[5]
         h2Min = h1Min
         h2Max = h1Max
+    elif seg_type == 1:
+        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(lab_img, PLOT_HISTOGRAMS, 'lab')
+        h2Min = h1Min
+        h2Max = h1Max
+    elif seg_type == 2:
+        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, PLOT_HISTOGRAMS, 'rgb')
+        h2Min = h1Min
+        h2Max = h1Max
     elif is_val:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, True)
+        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img_hsv, True, 'hsv')
         h2Min = h1Min
         h2Max = h1Max
     elif is_histo:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, PLOT_HISTOGRAMS)
+        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img_hsv, PLOT_HISTOGRAMS, 'hsv')
         h2Min = h1Min
         h2Max = h1Max
 
     if manually and not is_histo:
-        h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")
-        h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")
+        h1Min = cv2.getTrackbarPos("Val1 Min", "Trackbars")
+        h1Max = cv2.getTrackbarPos("Val1 Max", "Trackbars")
         h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")
         h2Max = cv2.getTrackbarPos("Hue2 Max", "Trackbars")
-        sMin = cv2.getTrackbarPos("Sat Min", "Trackbars")
-        sMax = cv2.getTrackbarPos("Sat Max", "Trackbars")
-        vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
-        vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
+        sMin = cv2.getTrackbarPos("Val2 Min", "Trackbars")
+        sMax = cv2.getTrackbarPos("Val2 Max", "Trackbars")
+        vMin = cv2.getTrackbarPos("Val3 Min", "Trackbars")
+        vMax = cv2.getTrackbarPos("Val3 Max", "Trackbars")
 
     range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
 
-    opening_mask, opening_mask_res = mask_range(img, range, (h2Min, h2Max))
+    opening_mask, opening_mask_res = mask_range(img, img2, range, (h2Min, h2Max))
 
-    result = [img_hsv, opening_mask, opening_mask_res]
+    result = [img2, opening_mask, opening_mask_res]
 
     if get_range:
         result.append(range)
@@ -186,8 +206,7 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
 
 
 
-def mask_range(img, range, hue2):
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+def mask_range(img, img2, range, hue2):
     h1Min = range[0]
     h1Max = range[1]
     sMin = range[2]
@@ -204,10 +223,10 @@ def mask_range(img, range, hue2):
     upper2 = np.array([h2Max, sMax, vMax])
 
     # nomral
-    img_mask = cv2.inRange(img_hsv, lower, upper)
+    img_mask = cv2.inRange(img2, lower, upper)
     imgMaskRes = cv2.bitwise_and(img, img, mask=img_mask)
     # mask 2
-    img_mask2 = cv2.inRange(img_hsv, lower2, upper2)
+    img_mask2 = cv2.inRange(img2, lower2, upper2)
     imgMask2Res = cv2.bitwise_and(img, img, mask=img_mask2)
 
     # combined
