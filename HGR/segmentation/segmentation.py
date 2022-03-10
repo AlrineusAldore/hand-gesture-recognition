@@ -276,8 +276,8 @@ def get_square(img, color):
     h, w = int(height//divisor), int(width//divisor)
 
     square_img = img.copy()
-    square_img = cv2.rectangle(square_img, (width-w,height-h), (width, height), color, 1)
-    small = img[height-h:height, width-w:width]
+    square_img = cv2.rectangle(square_img, (0 ,height-h), (w, height), color, 1)
+    small = img[height-h:height, 0:w]
 
     return square_img, small
 
