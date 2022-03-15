@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import imutils
+import sql.mySQL as sqlit
+db = sqlit.database()
 
 
 # Find all the lower points between the fingers
@@ -34,6 +36,8 @@ def find_lower_points(img):
     if defects is None:
         return img, 0
     cnt = 0
+    angles = []
+    points_between_fingers = []
     for i in range(defects.shape[0]):  # Calculate the angle
         s, e, f, d = defects[i][0]
         start = tuple(contours[s][0])
@@ -46,8 +50,13 @@ def find_lower_points(img):
         if angle <= np.pi / 2:  # angle less than 90 degree, treat as fingers
             cnt += 1
             cv2.circle(new_img, far, 2, [0, 0, 255], -1)
+            points_between_fingers.append(far)
+            angles.append(angle)
     if cnt > 0:
         cnt = cnt + 1
+    db.insertData("ANGLES", '"' + str(angles) + '"')
+    db.insertData("BETEEN_FINGER_POINTS", '"' + str(points_between_fingers) + '"')
+
     cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
 
     return new_img, cnt

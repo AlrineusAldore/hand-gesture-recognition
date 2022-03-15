@@ -1,13 +1,19 @@
 import sqlite3
 
-con = sqlite3.connect('hehe.db')
+con = sqlite3.connect('haha.db')
 cur = con.cursor()
 
 class database:
     def __init__(self):
         # Create angles table
-        cur.execute('''CREATE TABLE IF NOT EXISTS angles 
-                       (angle real)''')
+        self.creatTable("HAND_DATA", "ANGLES_INDEX INTEGER, EXTREAM_POINTS_INDEX INTEGER, FINGER_COUNT INTEGER,"
+                                     " BETEEN_FINGER_POINTS_INDEX INTEGER")
+        self.creatTable("ANGLES", "ANGLES_LIST TEXT")
+        self.creatTable("EXTREAM_POINTS",  "POINTS_LIST TEXT")
+        self.creatTable("BETEEN_FINGER_POINTS",  "POINTS_LIST TEXT")
+
+    def creatTable(self, tableName, columsName):
+        cur.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" + columsName +")")
 
     def insertData(self, tableName, dataStr):
         # Insert a row of data

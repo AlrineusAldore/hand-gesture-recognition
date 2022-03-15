@@ -1,15 +1,20 @@
 import analysis.points as pts
+import sql.mySQL as sqlit
 import cv2
 import mouse
 
+db = sqlit.database()
 
 # Draws extreme points on image and returns it
+# and add them to database
 def show_extreme_points(img, binary):
     ext_left, ext_right, ext_top, ext_bot = pts.extreme_points(binary)
+    db.insertData("EXTREAM_POINTS", '"' + str([ext_left, ext_right, ext_top, ext_bot]) + '"')
     cv2.circle(img, ext_left, 3, (0, 0, 255), -1)
     cv2.circle(img, ext_right, 3, (0, 255, 0), -1)
     cv2.circle(img, ext_top, 3, (255, 0, 0), -1)
     cv2.circle(img, ext_bot, 3, (255, 255, 0), -1)
+
     return img
 
 
