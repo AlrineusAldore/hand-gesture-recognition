@@ -16,40 +16,42 @@ class control_panel(wx.Panel):
         parent.SetSize(width, height)
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        try:
+            self.bmp = wx.BitmapFromBuffer(width, height, frame)
 
-        self.bmp = wx.BitmapFromBuffer(width, height, frame)
+            self.timer = wx.Timer(self)
+            self.timer.Start(1000./fps)
 
-        self.timer = wx.Timer(self)
-        self.timer.Start(1000./fps)
+            self.Bind(wx.EVT_PAINT, self.onPaint)
+            self.Bind(wx.EVT_TIMER, self.nextFrame)
 
-        self.Bind(wx.EVT_PAINT, self.onPaint)
-        self.Bind(wx.EVT_TIMER, self.nextFrame)
+            test = []
+            button_id = []
+            for i in range(10):
+                test.append(i)
+                button_id.append(wx.NewId())
 
-        test = []
-        button_id = []
-        for i in range(10):
-            test.append(i)
-            button_id.append(wx.NewId())
+            self.button = []
+            for i in range(len(test)):
+                self.button.append(wx.Button(self, button_id[i], label=(str(test[i]))))
+                self.button[i].Bind(wx.EVT_BUTTON, self.OnButton)
 
-        self.button = []
-        for i in range(len(test)):
-            self.button.append(wx.Button(self, button_id[i], label=(str(test[i]))))
-            self.button[i].Bind(wx.EVT_BUTTON, self.OnButton)
+            wrapper = wx.BoxSizer(wx.VERTICAL)
+            sizer = wx.FlexGridSizer(rows=2, cols=5, vgap=5, hgap=5)
 
-        wrapper = wx.BoxSizer(wx.VERTICAL)
-        sizer = wx.FlexGridSizer(rows=2, cols=5, vgap=5, hgap=5)
+            for i in self.button:
+                sizer.Add(i, 0, wx.ALL, 0)
 
-        for i in self.button:
-            sizer.Add(i, 0, wx.ALL, 0)
+            sizer.AddGrowableRow(1, 1)
+            sizer.AddGrowableRow(0, 1)
 
-        sizer.AddGrowableRow(1, 1)
-        sizer.AddGrowableRow(0, 1)
+            for col in range(sizer.Cols):
+                sizer.AddGrowableCol(col, 1)
 
-        for col in range(sizer.Cols):
-            sizer.AddGrowableCol(col, 1)
-
-        wrapper.Add(sizer, proportion=1, flag=wx.ALL | wx.EXPAND)
-        self.SetSizer(wrapper)
+            wrapper.Add(sizer, proportion=1, flag=wx.ALL | wx.EXPAND)
+            self.SetSizer(wrapper)
+        except:
+            print("end")
 
     def OnButton(self, event):
         Id = event.GetId()

@@ -20,7 +20,7 @@ def find_lower_points(img):
     # Contours
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if contours == ():
-        return new_img
+        return new_img, 0
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(new_img, [contours], -1, (255, 255, 0), 1)
 
@@ -32,7 +32,7 @@ def find_lower_points(img):
     hull = cv2.convexHull(contours, returnPoints=False)
     defects = cv2.convexityDefects(contours, hull)
     if defects is None:
-        return
+        return img, 0
     cnt = 0
     for i in range(defects.shape[0]):  # Calculate the angle
         s, e, f, d = defects[i][0]
