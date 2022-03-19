@@ -285,21 +285,20 @@ def get_square(img, color):
 
 # Computes the average value of each column
 def compute_best_range(ranges):
-    print("initial ranges:")
-    for rang in ranges:
-        print(rang)
-
     new_arr = []
     ncols = 6
     nrows = len(ranges)
-    print(nrows)
+    print("\nnum of ranges:", nrows)
 
-    for col in range(ncols):
-        new_arr.append([])
-        for row in range(nrows):
-            new_arr[col].append(ranges[row][col])
+    try:
+        for col in range(ncols):
+            new_arr.append([])
+            for row in range(nrows):
+                new_arr[col].append(ranges[row][col])
+    except Exception as e:
+        print("e:", repr(e))
 
-    print("\nnew_arr:")
+    print("new_arr:")
     avrg = []
     edges = []
     is_min = True
@@ -312,7 +311,7 @@ def compute_best_range(ranges):
             edges.append(max(row))
         is_min = not is_min
 
-    print("\navrg:\n", avrg)
-    print("\nedges:\n", edges)
+    print("avrg:\n", avrg)
+    print("edges:\n", edges)
 
     return avrg, edges

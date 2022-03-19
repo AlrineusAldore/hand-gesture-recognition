@@ -22,7 +22,7 @@ VID_NAME = "Videos\\handGesturesVid2.mp4"
 SET_VALUES_MANUALLY = False
 
 stage = [1]
-ranges = []
+ranges = {"hsv":[], "lab":[], "rgb":[]}
 clock_has_not_started = [True]
 
 
@@ -88,7 +88,7 @@ def analyze_capture(cap_path, frames_to_skip, app):
 def analyze_frame(img, cmds_handler, is_histo):
     #img = img[160:490, 0:330]
     img = cv2.resize(img, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_AREA)
-
+    scale = 1.8
 
     if not is_histo:
         # Separate hand from background through hsv difference
@@ -100,7 +100,9 @@ def analyze_frame(img, cmds_handler, is_histo):
         stack = segmentate(img)
 
     #app.frame.panel.put_img(stack)
-    cv2.imshow("stack", stack.to_viewable_stack(2))
+    if stage[0] == 3:
+        scale = 1.8
+    cv2.imshow("stack", stack.to_viewable_stack(scale))
 
 
 
@@ -122,22 +124,81 @@ def segmentate(img):
         stack = stage1(img)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
-        if clock_has_not_started[0]:
+        if clock_has_not_started[0] and stage[0] == 2:
             # Be in stage 1 for 3 seconds
             t = threading.Thread(target=helpers.timer, args=(5, stage, clock_has_not_started))
             t.start()
             clock_has_not_started[0] = False
-        stack, range = stage2(img)
-        ranges.append(range)
+        stack, color_spaces_ranges = stage2(img)
+        ranges["hsv"].append(color_spaces_ranges[0])
+        ranges["lab"].append(color_spaces_ranges[1])
+        ranges["rgb"].append(color_spaces_ranges[2])
     # In stage 3, use the calculated range from the ranges
     elif stage[0] == 3:
         if clock_has_not_started[0]:
-            ranges = sgm.compute_best_range(ranges)
+            ranges["hsv"] = sgm.compute_best_range(ranges["hsv"])
+            ranges["lab"] = sgm.compute_best_range(ranges["lab"])
+            ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
         stack = stage3(img)
 
 
     return stack
+
+
+def stage1(img):
+    color = (255, 0, 0) # stage 1 is blue
+    square_img, small = sgm.get_square(img, color)
+
+    hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=0))
+    lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=1))
+    rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=2))
+
+    stack = stk.Stack([square_img, rgb_small, rgb_small_no_bg, rgb_small_bin,
+                       square_img, hsv_small, hsv_small_no_bg, hsv_small_bin,
+                       square_img, lab_small, lab_small_no_bg, lab_small_bin])
+
+    return stack
+
+
+
+def stage2(img):
+    color = (0, 255, 0) #stage 2 is green
+    square_img, small = sgm.get_square(img, color)
+
+    hsv_small, hsv_small_no_bg, hsv_small_bin, hsv_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=0))
+    lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=1))
+    rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=2))
+
+    stack = stk.Stack([square_img, rgb_small, rgb_small_no_bg, rgb_small_bin,
+                       square_img, hsv_small, hsv_small_no_bg, hsv_small_bin,
+                       square_img, lab_small, lab_small_no_bg, lab_small_bin])
+
+    return stack, (hsv_range, lab_range, rgb_range)
+
+
+def stage3(img):
+    # Separate hand from background through hsv difference
+    hsv_img, hsv_avg_bin, hsv_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
+    hsv_img, hsv_edge_bin, hsv_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
+    lab_img, lab_avg_bin, lab_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][0], seg_type=1)
+    lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
+    rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
+    rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
+
+    region_seg = list(rsgm.region_based_segmentation(img))
+    #vis = cv2.hconcat(region_seg)
+    normalized = (region_seg[0]*255).astype(np.uint8)
+
+    stack = stk.Stack([rgb_img, rgb_avg_bin, rgb_avg_no_bg, rgb_edge_bin, rgb_edge_no_bg,
+                       lab_img, lab_avg_bin, lab_avg_no_bg, lab_edge_bin, lab_edge_no_bg,
+                       hsv_img, hsv_avg_bin, hsv_avg_no_bg, hsv_edge_bin, hsv_edge_no_bg], (3,5))
+    #stack.append(normalized)
+
+    return stack
+
+
+
 
 
 def stage0(img, aWeight):
@@ -168,50 +229,6 @@ def segment_bg(img, threshold=25):
         # based on contour area, get the maximum contour which is the hand
         segmented = max(cnts, key=cv2.contourArea)
         return (thresholded, segmented)
-
-
-def stage1(img):
-    color = (255, 0, 0) # stage 1 is blue
-    square_img, small = sgm.get_square(img, color)
-
-    hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=0))
-    lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=1))
-    rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=2))
-
-    stack = stk.Stack([square_img, rgb_small, rgb_small_no_bg, rgb_small_bin,
-                       square_img, hsv_small, hsv_small_no_bg, hsv_small_bin,
-                       square_img, lab_small, lab_small_no_bg, lab_small_bin])
-
-    return stack
-
-
-
-def stage2(img):
-    color = (0, 255, 0) #stage 2 is green
-    square_img, small = sgm.get_square(img, color)
-
-    small_hsv, small_no_bg, small_binary, range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=1))
-
-    stack = stk.Stack([square_img, small, small_hsv, small_no_bg, small_binary])
-
-    return stack, range
-
-
-def stage3(img):
-    # Separate hand from background through hsv difference
-    img_hsv, avg_bin, avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges[0], seg_type=1)
-    img_hsv, edge_bin, edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges[1], seg_type=1)
-
-    region_seg = list(rsgm.region_based_segmentation(img))
-    #vis = cv2.hconcat(region_seg)
-    normalized = (region_seg[0]*255).astype(np.uint8)
-
-    stack = stk.Stack([img, avg_bin, avg_no_bg, img_hsv, edge_bin, edge_no_bg])
-    #stack.append(normalized)
-
-    return stack
-
-
 
 
 def analyze_segmentated_img(img, binary):
