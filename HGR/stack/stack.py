@@ -4,12 +4,13 @@ import math
 
 
 class Stack():
-    def __init__(self, lst=None, size=(1,1)):
+    def __init__(self, lst=None, size=(1,1), is_filler_empty=False):
         if lst is None:
             lst = []
         self.lst = lst
         self.size = size
         self.img_stack = None
+        self.is_filler_empty = is_filler_empty
 
         self.organize(size)
 
@@ -75,7 +76,8 @@ class Stack():
         filler_img = self.lst[0].copy()
         filler_img[:] = 0, 0, 0
 
-        cv2.putText(filler_img, "filler", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
+        if not self.is_filler_empty:
+            cv2.putText(filler_img, "filler", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
 
         return filler_img
 

@@ -1,25 +1,20 @@
-from segmentation.constants import *
-from inspect import currentframe
+from constants import *
 import matplotlib.pyplot as plt
 import scipy.signal as signal
 
 
-def get_line_num():
-    return "line num: " + str(currentframe().f_back.f_lineno)
-
-
-def start_segmentation_plot(hist_h, hist_s, hist_v, colors_space):
+def start_segmentation_plot(hist1, hist2, hist3, colors_space):
     """
-    :param hist_h: hue histogram
-    :param hist_s: saturation histogram
-    :param hist_v: value histogram
+    :param hist1: first channel histogram
+    :param hist2: second channel histogram
+    :param hist3: third channel histogram
     :param colors_space: name of the color space
     :return: None
     """
     plt.cla()
-    plt.plot(hist_h, color='r', label=colors_space[0])
-    plt.plot(hist_s, color='g', label=colors_space[1])
-    plt.plot(hist_v, color='b', label=colors_space[2])
+    plt.plot(hist1, color='r', label=colors_space[0])
+    #plt.plot(hist2, color='g', label=colors_space[1])
+    #plt.plot(hist3, color='b', label=colors_space[2])
 
 
 def end_segmentation_plot(h_range, s_range, v_range):
@@ -113,9 +108,14 @@ def get_range_of_max(f, max, pts, max_pts):
     try:
         max_i = pts.index(max)
     except:
-        # If max is from original maxima list and not in the processed list then take closest maxima of it
-        max = min(max_pts, key=lambda x:abs(x-max))
-        max_i = pts.index(max)
+        try:
+            # If max is from original maxima list and not in the processed list then take closest maxima of it
+            max = min(max_pts, key=lambda x:abs(x-max))
+            max_i = pts.index(max)
+        except Exception as e:
+            print("e:", repr(e))
+            print("max_pts:", max_pts)
+            raise e
 
 
     # Get min point / zero point to the left of max (whichever is closest to max)
@@ -135,7 +135,12 @@ def get_range_of_max(f, max, pts, max_pts):
     return start, end
 
 
+# Get range of max hill (max point until zero from left & right)
+def get_range_of_hill_range(f, max):
+    start = check_for_value(f, 0, end=max, go_backwards=True)
+    end = check_for_value(f, 0, start=max)
 
+    return start, end
 
 
 
@@ -170,9 +175,9 @@ def get_useful_extrema(f):
                 try:
                     b.remove(pts[i+1])
                 except Exception as e:
-                    print("breakpoint this exception. i =", i)
+                    print("\nbreakpoint this exception. i =", i, ". pt=", pts_copy[i], pts[i])
                     print("e:", repr(e))
-                    print("\npts at the start:",pts_copy)
+                    print("pts at the start:",pts_copy)
                     print("pts at the error:",pts)
                 b[:] = [mid if x==pts[i-1] else x for x in b]  # Change pts[i-1]'s value to mid
 
@@ -193,3 +198,7 @@ def get_useful_extrema(f):
 
 
     return minima, maxima
+
+
+def check_all_zero(iterable):
+  return all(v == 0 for v in iterable)

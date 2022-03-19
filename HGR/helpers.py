@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import time
+from inspect import currentframe
 
 
 def empty(a):
     pass
 
+def get_line_num():
+    return "line num: " + str(currentframe().f_back.f_lineno)
 
 # Initialize the manual hsv values windows
 def InitializeWindows():

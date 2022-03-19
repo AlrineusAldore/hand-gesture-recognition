@@ -1,4 +1,4 @@
-from segmentation.constants import *
+from constants import *
 from segmentation.helpers import *
 import cv2
 import numpy as np
@@ -22,6 +22,18 @@ def analyze_colorspace(img, is_plot, colors_space):
     hist2 = cv2.calcHist([val2], [0], None, [256], [0, 256])
     hist3 = cv2.calcHist([val3], [0], None, [256], [0, 256])
 
+    #if there are a lot of black pixels, get rid of them in histogram
+    if abs(hist3[0][0]-hist1[0][0]) < BLACK_PX_DIFF and abs(hist3[0][0]-hist2[0][0]) < BLACK_PX_DIFF:
+        hist1[0][0] = 0
+        hist2[0][0] = 0
+        hist3[0][0] = 0
+    else:
+        pass  # for breakpoint
+
+    # if one channel is empty (all black) then raise exception
+    if check_all_zero(hist1) or check_all_zero(hist2) or check_all_zero(hist3):
+        raise Exception(EMPTY_HISTO)
+
     if is_plot:
         start_segmentation_plot(hist1, hist2, hist3, colors_space)
 
@@ -30,8 +42,8 @@ def analyze_colorspace(img, is_plot, colors_space):
         start2, end2 = analyze_channel(hist2, is_plot, 'orange', "smooth "+colors_space[1])
         start3, end3 = analyze_channel(hist3, is_plot, 'cyan', "smooth "+colors_space[2])
     else: #if hsv, ignore saturation & value
-        start1 = 130
-        end1 = 180
+        #start1 = 130
+        #end1 = 180
         start2 = 0
         end2 = 255
         start3 = 0
@@ -49,7 +61,7 @@ def analyze_colorspace(img, is_plot, colors_space):
 
 
 def analyze_channel(hist, is_plot, color, plot_name):
-    # First flatten hist since every y value is in a list for some reason. Then turn all the values from ints to floats
+    # First flatten hist since every y value is in a list for some reason. Then turn all the values from floats to ints
     y = np.int_(list(chain.from_iterable(hist.tolist())))
 
     # Smooth out hist
@@ -62,7 +74,7 @@ def analyze_channel(hist, is_plot, color, plot_name):
 
     minima, maxima = get_useful_extrema(yhat2)
     start, end = find_min_between_max(yhat2, minima, maxima)
-    start2, end2 = get_highest_max_range(yhat2, minima, maxima)
+    start2, end2 = get_range_of_hill_range(yhat2, yhat2.argmax())
 
     return start, end
 
@@ -144,7 +156,7 @@ def lab_segmentation(img):
 
 # Gets rgb image and returns it without background
 # Can choose how to cut background from img (constant values, from histogram, manually changeable)
-def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_params=False, params=None, get_range=False, seg_type=0):
+def hsv_differentiation(img, is_plot=False, manually=False, has_params=False, params=None, get_range=False, seg_type=0):
     # Color
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     lab_img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -175,24 +187,21 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         vMax = params[5]
         h2Min = h1Min
         h2Max = h1Max
+    elif seg_type == 0:
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, is_plot, 'hsv')
+        h2Min = 0
+        h2Max = 12
     elif seg_type == 1:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(lab_img, PLOT_HISTOGRAMS, 'lab')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(lab_img, is_plot, 'lab')
         h2Min = h1Min
         h2Max = h1Max
     elif seg_type == 2:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img, PLOT_HISTOGRAMS, 'rgb')
-        h2Min = h1Min
-        h2Max = h1Max
-    elif is_val:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, True, 'hsv')
-        h2Min = h1Min
-        h2Max = h1Max
-    elif is_histo:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, PLOT_HISTOGRAMS, 'hsv')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img, is_plot, 'rgb')
         h2Min = h1Min
         h2Max = h1Max
 
-    if manually and not is_histo:
+
+    if manually and not is_plot:
         h1Min = cv2.getTrackbarPos("Val1 Min", "Trackbars")
         h1Max = cv2.getTrackbarPos("Val1 Max", "Trackbars")
         h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")
@@ -288,8 +297,8 @@ def get_square(img, color):
     h, w = int(height//divisor), int(width//divisor)
 
     square_img = img.copy()
-    square_img = cv2.rectangle(square_img, (0 ,height-h), (w, height), color, 1)
-    small = img[height-h:height, 0:w]
+    square_img = cv2.rectangle(square_img, (width-w ,0), (width, h), color, 1)
+    small = img[0:h, width-w:width]
 
     return square_img, small
 
@@ -308,7 +317,7 @@ def compute_best_range(ranges):
             for row in range(nrows):
                 new_arr[col].append(ranges[row][col])
     except Exception as e:
-        print("e:", repr(e))
+        print("at compute_best_range(), e:", repr(e))
 
     print("new_arr:")
     avrg = []

@@ -1,3 +1,4 @@
+from constants import EMPTY_HISTO
 import segmentation.segmentation as sgm
 import segmentation.region_segmentation as rsgm
 import stack.stack as stk
@@ -71,7 +72,7 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         img = cv2.flip(img, 1) #unmirror the image
 
-        analyze_frame(img, cmds_handler, is_edge_seg=True)
+        analyze_frame(img, cmds_handler)
         #cv2.waitKey(0)
 
         ##end_tot = time.time()
@@ -93,7 +94,7 @@ def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
 
 
     if is_edge_seg:
-        stack = edge_segmentation(img)
+        stack = stk.Stack(edge_segmentation(img))
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
@@ -114,6 +115,7 @@ def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
 def segmentate(img):
     stack = None
     global ranges
+    main_area_img = edge_segmentation(img)
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
@@ -126,7 +128,7 @@ def segmentate(img):
                 stage[0] += 1
                 clock_has_not_started[0] = True
             #clock_has_not_started[0] = False
-        stack = stage1(img)
+        stack = stage1(main_area_img)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
         if clock_has_not_started[0] and stage[0] == 2:
@@ -134,18 +136,19 @@ def segmentate(img):
             t = threading.Thread(target=helpers.timer, args=(3, stage, clock_has_not_started))
             t.start()
             clock_has_not_started[0] = False
-        stack, color_spaces_ranges = stage2(img)
-        ranges["hsv"].append(color_spaces_ranges[0])
-        ranges["lab"].append(color_spaces_ranges[1])
-        ranges["rgb"].append(color_spaces_ranges[2])
+        stack, color_spaces_ranges = stage2(main_area_img)
+        if color_spaces_ranges is not None:
+            ranges["hsv"].append(color_spaces_ranges)
+            #ranges["lab"].append(color_spaces_ranges[1])
+            #ranges["rgb"].append(color_spaces_ranges[2])
     # In stage 3, use the calculated range from the ranges
     elif stage[0] == 3:
         if clock_has_not_started[0]:
             ranges["hsv"] = sgm.compute_best_range(ranges["hsv"])
-            ranges["lab"] = sgm.compute_best_range(ranges["lab"])
-            ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
+            #ranges["lab"] = sgm.compute_best_range(ranges["lab"])
+            #ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
-        stack = stage3(img)
+        stack = stage3(main_area_img)
 
 
     return stack
@@ -155,13 +158,18 @@ def stage1(img):
     color = (255, 0, 0) # stage 1 is blue
     square_img, small = sgm.get_square(img, color)
 
-    hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=0))
-    lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=1))
-    rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small, is_histo=True, seg_type=2))
+    try:
+        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=False))
+        #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
+        #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
-    stack = stk.Stack([square_img, rgb_small, rgb_small_no_bg, rgb_small_bin,
-                       square_img, hsv_small, hsv_small_no_bg, hsv_small_bin,
-                       square_img, lab_small, lab_small_no_bg, lab_small_bin])
+        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin], size=(1,5))
+    except Exception as e:
+        stack = stk.Stack([square_img, small], size=(1, 5), is_filler_empty=True)
+        if e.args[0] != EMPTY_HISTO:
+            print(helpers.get_line_num(), ". e:", repr(e))
+
+
 
     return stack
 
@@ -171,29 +179,33 @@ def stage2(img):
     color = (0, 255, 0) #stage 2 is green
     square_img, small = sgm.get_square(img, color)
 
-    hsv_small, hsv_small_no_bg, hsv_small_bin, hsv_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=0))
-    lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=1))
-    rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, is_histo=True, get_range=True, seg_type=2))
+    try:
+        hsv_small, hsv_small_no_bg, hsv_small_bin, hsv_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=0))
+        #lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=1))
+        #rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=2))
 
-    stack = stk.Stack([square_img, rgb_small, rgb_small_no_bg, rgb_small_bin,
-                       square_img, hsv_small, hsv_small_no_bg, hsv_small_bin,
-                       square_img, lab_small, lab_small_no_bg, lab_small_bin])
+        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin], size=(1,5))
+    except Exception as e:
+        stack = stk.Stack([square_img, small], size=(1, 5), is_filler_empty=True)
+        if e.args[0] != EMPTY_HISTO:
+            print(helpers.get_line_num(), ". e:", repr(e))
 
-    return stack, (hsv_range, lab_range, rgb_range)
+        return stack, None
+
+    return stack, (hsv_range)
 
 
 def stage3(img):
     # Separate hand from background through hsv difference
     hsv_img, hsv_avg_bin, hsv_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
     hsv_img, hsv_edge_bin, hsv_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
-    lab_img, lab_avg_bin, lab_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][0], seg_type=1)
-    lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
-    rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
-    rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
+    #lab_img, lab_avg_bin, lab_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][0], seg_type=1)
+    #lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
+    #rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
+    #rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
 
-    stack = stk.Stack([rgb_img, rgb_avg_bin, rgb_avg_no_bg, rgb_edge_bin, rgb_edge_no_bg,
-                       lab_img, lab_avg_bin, lab_avg_no_bg, lab_edge_bin, lab_edge_no_bg,
-                       hsv_img, hsv_avg_bin, hsv_avg_no_bg, hsv_edge_bin, hsv_edge_no_bg], (3,5))
+    stack = stk.Stack([img, hsv_img, hsv_avg_bin,
+                       hsv_avg_no_bg, hsv_edge_bin, hsv_edge_no_bg], size=(2,3))
 
     return stack
 
@@ -211,9 +223,11 @@ def edge_segmentation(img):
     blur_normalized_gray = helpers.normalize_zero1_to_zero255(blur_variables[0][1]) # Chosen one
     #blur_normalized_val = helpers.normalize_zero1_to_zero255(blur_variables[1][1])
 
-    stack = stk.Stack([img, img_blur, blur_normalized_gray], (2,3))
+    stack = stk.Stack([img, img_blur, blur_normalized_gray], (1,3))
 
-    return stack
+    main_area_img = cv2.bitwise_and(img, img, mask=blur_normalized_gray)
+
+    return main_area_img
 
 
 def stage0(img, aWeight):
