@@ -1,0 +1,7 @@
+segmentation plan:
+
+	weighted background:
+		-do that
+	
+	
+	-fix color-spaces order to rgb->lab->hsv

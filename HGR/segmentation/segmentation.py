@@ -8,28 +8,37 @@ from itertools import chain
 import time
 
 
-def histogram(img, plot_histo, colors_space):
+def analyze_colorspace(img, is_plot, colors_space):
     """
     :param img: converted color space img
-    :param plot_histo: to plot a histogram or not
+    :param is_plot: to plot a histogram or not
     :param colors_space: name of the colors space
     :return: range of values
     """
     val1, val2, val3 = img[:, :, 0], img[:, :, 1], img[:, :, 2]
 
-    # Makes histograms of h, s, v accordingly
+    # Makes histograms of each channel accordingly (for example: h, s, v)
     hist1 = cv2.calcHist([val1], [0], None, [256], [0, 256])
     hist2 = cv2.calcHist([val2], [0], None, [256], [0, 256])
     hist3 = cv2.calcHist([val3], [0], None, [256], [0, 256])
 
-    if plot_histo:
+    if is_plot:
         start_segmentation_plot(hist1, hist2, hist3, colors_space)
 
-    start1, end1 = analyze_histogram(hist1, plot_histo, 'purple', "smooth "+colors_space[0])
-    start2, end2 = analyze_histogram(hist2, plot_histo, 'orange', "smooth "+colors_space[1])
-    start3, end3 = analyze_histogram(hist3, plot_histo, 'cyan', "smooth "+colors_space[2])
+    start1, end1 = analyze_channel(hist1, is_plot, 'purple', "smooth "+colors_space[0])
+    if colors_space != "hsv":
+        start2, end2 = analyze_channel(hist2, is_plot, 'orange', "smooth "+colors_space[1])
+        start3, end3 = analyze_channel(hist3, is_plot, 'cyan', "smooth "+colors_space[2])
+    else: #if hsv, ignore saturation & value
+        start1 = 130
+        end1 = 180
+        start2 = 0
+        end2 = 255
+        start3 = 0
+        end3 = 255
 
-    if plot_histo:
+
+    if is_plot:
         #start = time.time()
         end_segmentation_plot((start1, end1), (start2, end2), (start3, end3))
         #end = time.time()
@@ -39,7 +48,7 @@ def histogram(img, plot_histo, colors_space):
 
 
 
-def analyze_histogram(hist, plot_histo, color, plot_name):
+def analyze_channel(hist, is_plot, color, plot_name):
     # First flatten hist since every y value is in a list for some reason. Then turn all the values from ints to floats
     y = np.int_(list(chain.from_iterable(hist.tolist())))
 
@@ -47,7 +56,7 @@ def analyze_histogram(hist, plot_histo, color, plot_name):
     yhat = savgol_filter(y, 21, 2)  # type: np.ndarray
     yhat2 = savgol_filter(yhat, 21, 2)  # type: np.ndarray
 
-    if plot_histo:
+    if is_plot:
         x = list(range(0, 256))
         plt.plot(x, yhat2, color=color, label=plot_name)
 
@@ -148,9 +157,9 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         img2 = img_hsv
 
     # HSV
-    h1Min = 0
-    h1Max = 179
-    sMin = 80
+    h1Min = 0  #130~
+    h1Max = 180
+    sMin = 80  #0
     sMax = 255
     vMin = 0
     vMax = 255
@@ -167,19 +176,19 @@ def hsv_differentiation(img, is_histo=False, manually=False, is_val=False, has_p
         h2Min = h1Min
         h2Max = h1Max
     elif seg_type == 1:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(lab_img, PLOT_HISTOGRAMS, 'lab')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(lab_img, PLOT_HISTOGRAMS, 'lab')
         h2Min = h1Min
         h2Max = h1Max
     elif seg_type == 2:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img, PLOT_HISTOGRAMS, 'rgb')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img, PLOT_HISTOGRAMS, 'rgb')
         h2Min = h1Min
         h2Max = h1Max
     elif is_val:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img_hsv, True, 'hsv')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, True, 'hsv')
         h2Min = h1Min
         h2Max = h1Max
     elif is_histo:
-        h1Min, h1Max, sMin, sMax, vMin, vMax = histogram(img_hsv, PLOT_HISTOGRAMS, 'hsv')
+        h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, PLOT_HISTOGRAMS, 'hsv')
         h2Min = h1Min
         h2Max = h1Max
 
@@ -239,8 +248,11 @@ def mask_range(img, img2, range, hue2):
     guassianMaskRes = cv2.bitwise_and(img, img, mask=guassian_mask)
 
     # closing
+    sizee = (3,3)
     closing_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 4))
     opening_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    closing_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, sizee)
+    opening_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, sizee)
     #ellipse_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
     closing_mask = cv2.morphologyEx(both_masks, cv2.MORPH_CLOSE, closing_kernel)
     closing_mask_res = cv2.bitwise_and(img, img, mask=closing_mask)
@@ -271,7 +283,7 @@ def mask_range(img, img2, range, hue2):
 
 
 def get_square(img, color):
-    divisor = 2.5
+    divisor = 3
     height, width = img.shape[:2]
     h, w = int(height//divisor), int(width//divisor)
 

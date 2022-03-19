@@ -67,6 +67,10 @@ def draw_contours(img, imgContour, imgCanvas):
     return significant_contours
 
 
+def normalize_zero1_to_zero255(img):
+    return (img*255).astype(np.uint8)
+
+
 def timer(seconds, stage, not_started_clock):
     time.sleep(seconds)
 
