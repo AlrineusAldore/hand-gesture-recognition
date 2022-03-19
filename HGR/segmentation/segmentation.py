@@ -16,9 +16,13 @@ def analyze_colorspace(img, is_plot, colors_space):
     :return: range of values
     """
     val1, val2, val3 = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+    hist1_size = 256
+    if colors_space == "hsv":  # Hue's range is uniquely 0-180
+        hist1_size = 180
 
     # Makes histograms of each channel accordingly (for example: h, s, v)
-    hist1 = cv2.calcHist([val1], [0], None, [256], [0, 256])
+
+    hist1 = cv2.calcHist([val1], [0], None, [hist1_size], [0, hist1_size])
     hist2 = cv2.calcHist([val2], [0], None, [256], [0, 256])
     hist3 = cv2.calcHist([val3], [0], None, [256], [0, 256])
 
@@ -69,7 +73,7 @@ def analyze_channel(hist, is_plot, color, plot_name):
     yhat2 = savgol_filter(yhat, 21, 2)  # type: np.ndarray
 
     if is_plot:
-        x = list(range(0, 256))
+        x = list(range(0, len(hist)))
         plt.plot(x, yhat2, color=color, label=plot_name)
 
     minima, maxima = get_useful_extrema(yhat2)
@@ -189,7 +193,7 @@ def hsv_differentiation(img, is_plot=False, manually=False, has_params=False, pa
         h2Max = h1Max
     elif seg_type == 0:
         h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, is_plot, 'hsv')
-        h2Min = 0
+        h2Min = 0  # These 2 values always appear on the hand
         h2Max = 12
     elif seg_type == 1:
         h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(lab_img, is_plot, 'lab')

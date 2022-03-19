@@ -57,7 +57,7 @@ def check_for_endpoints_extrema(f):
 
     #Get slopes of endpoints with points that has x differences of 3
     start_slope = slope(0, 3, f=f)
-    end_slope = slope(252, 255, f=f)
+    end_slope = slope(len(f)-4, len(f)-1, f=f)
 
     # Check if start is a significant min/max
     if start_slope > SMALL_SLOPE*2:
@@ -67,9 +67,9 @@ def check_for_endpoints_extrema(f):
 
     #Check if end is a significant min/max
     if end_slope > SMALL_SLOPE*2:
-        maxes.append(255)
+        maxes.append(len(f)-1)
     elif end_slope < SMALL_SLOPE*(-2):
-        mins.append(255)
+        mins.append(len(f)-1)
 
     return mins, maxes
 
@@ -78,13 +78,17 @@ def check_for_endpoints_extrema(f):
 def check_for_value(f, value, start=0, end=256, go_backwards=False):
     """
     Function checks the first occurrence of value in function f(x) within the given range and returns it
-    :param f: math function f(x) with x between 0 and 255
+    :param f: math function f(x) with x between 0 and len(f)-1
     :param value: wanted y value in function
     :param start: from when should we start
     :param end: when should we stop
     :param go_backwards: Whether to check the first from the start or first from the end
     :return: the first x of the wanted y value
     """
+    # Can't initialize it so from the start so set it here instead
+    if end == 256:
+        end = len(f)
+
     if go_backwards:
         res = start
         for x in range(start, end):
@@ -186,13 +190,13 @@ def get_useful_extrema(f):
 
     for x in end_mins:
         index = 0
-        if x == 255:
+        if x == len(f)-1:
             index = len(minima)
         minima.insert(index, x)
 
     for x in end_maxes:
         index = 0
-        if x == 255:
+        if x == len(f)-1:
             index = len(minima)
         minima.insert(index, x)
 

@@ -159,7 +159,7 @@ def stage1(img):
     square_img, small = sgm.get_square(img, color)
 
     try:
-        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=False))
+        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=True))
         #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
