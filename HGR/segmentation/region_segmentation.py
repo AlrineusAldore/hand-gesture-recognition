@@ -8,18 +8,8 @@ from scipy import ndimage as ndi
 
 def region_based_segmentation(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    hue, val = hsv_img[:,:,0], hsv_img[:,:,2]
 
-    gray_hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
-    val_hist = cv2.calcHist([val], [0], None, [256], [0, 256])
-    #plot_hist(gray_hist, "gray")
-    #plot_hist(val_hist, "val")
-
-    variables = segmentate_from_channel(gray)
-    variables2 = segmentate_from_channel(val)
-
-    return variables, variables2
+    return segmentate_from_channel(gray)
 
 
 def segmentate_from_channel(channel_img):
@@ -28,13 +18,15 @@ def segmentate_from_channel(channel_img):
     markers[channel_img < 30] = 2
     markers[channel_img > 150] = 1
 
-    elevation_map = sobel(channel_img)
+    elevation_map = sobel(channel_img)  # Get edges
+
+    # Fill edges
     segmentation = watershed(elevation_map, markers)
     segmentation = ndi.binary_fill_holes(segmentation - 1)
 
     labeled_img, obj_count = ndi.label(segmentation)
 
-    return elevation_map, labeled_img, obj_count
+    return elevation_map, labeled_img
 
 
 

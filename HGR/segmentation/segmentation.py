@@ -274,22 +274,6 @@ def mask_range(img, img2, range, hue2):
     opening_mask = cv2.morphologyEx(closing_mask, cv2.MORPH_OPEN, opening_kernel)
     opening_mask_res = cv2.bitwise_and(img, img, mask=opening_mask)
 
-    # use the masks to get average color
-    average = cv2.mean(both_masks_res, both_masks)
-    # Makes a new image for average color
-    both_masks_average = img.copy()
-    both_masks_average[:] = (average[0], average[1], average[2])
-
-    # use the masks to get average color
-    average = cv2.mean(closing_mask_res, closing_mask)
-    closing_mask_average = img.copy()
-    closing_mask_average[:] = (average[0], average[1], average[2])
-
-    # use the masks to get average color
-    average = cv2.mean(opening_mask_res, opening_mask)
-    opening_mask_average = img.copy()
-    opening_mask_average[:] = (average[0], average[1], average[2])
-
     return opening_mask, opening_mask_res
 
 

@@ -159,7 +159,7 @@ def stage1(img):
     square_img, small = sgm.get_square(img, color)
 
     try:
-        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=True))
+        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=False))
         #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
@@ -214,18 +214,10 @@ def edge_segmentation(img):
     scale = 31
     img_blur = cv2.GaussianBlur(img,(scale,scale),1)
 
-    variables = list(rsgm.region_based_segmentation(img))
-    blur_variables = list(rsgm.region_based_segmentation(img_blur))
-    #vis = cv2.hconcat(region_seg)
-    #normalized_gray = helpers.normalize_zero1_to_zero255(variables[0][1])
-    #normalized_val = helpers.normalize_zero1_to_zero255(variables[1][1])
+    blur_vars = rsgm.region_based_segmentation(img_blur)
+    normalized = helpers.normalize_zero1_to_zero255(blur_vars[1])
 
-    blur_normalized_gray = helpers.normalize_zero1_to_zero255(blur_variables[0][1]) # Chosen one
-    #blur_normalized_val = helpers.normalize_zero1_to_zero255(blur_variables[1][1])
-
-    stack = stk.Stack([img, img_blur, blur_normalized_gray], (1,3))
-
-    main_area_img = cv2.bitwise_and(img, img, mask=blur_normalized_gray)
+    main_area_img = cv2.bitwise_and(img, img, mask=normalized)
 
     return main_area_img
 
