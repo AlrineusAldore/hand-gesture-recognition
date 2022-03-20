@@ -1,19 +1,19 @@
 from constants import EMPTY_HISTO
+from analysis import mouse_handler
+from gui import gui_handler as gui
+from cython_funcs import helpers_cy as cy
 import segmentation.segmentation as sgm
 import segmentation.region_segmentation as rsgm
 import stack.stack as stk
 import analysis.fingers as fings
 import analysis.points as pts
-from analysis import mouse_handler
 import analysis.general as general
+import commands.commands_handler as cmds
 import helpers
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import threading
-from gui import gui_handler as gui
-import commands.commands_handler as cmds
-from cython_funcs import helpers_cy as cy
 import time
 
 #recist code
@@ -116,6 +116,7 @@ def segmentate(img):
     stack = None
     global ranges
     main_area_img = edge_segmentation(img)
+    b, no_low_sat = rsgm.threshold_white(main_area_img)
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
@@ -128,7 +129,7 @@ def segmentate(img):
                 stage[0] += 1
                 clock_has_not_started[0] = True
             #clock_has_not_started[0] = False
-        stack = stage1(main_area_img)
+        stack = stage1(no_low_sat)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
         if clock_has_not_started[0] and stage[0] == 2:
@@ -136,7 +137,7 @@ def segmentate(img):
             t = threading.Thread(target=helpers.timer, args=(3, stage, clock_has_not_started))
             t.start()
             clock_has_not_started[0] = False
-        stack, color_spaces_ranges = stage2(main_area_img)
+        stack, color_spaces_ranges = stage2(no_low_sat)
         if color_spaces_ranges is not None:
             ranges["hsv"].append(color_spaces_ranges)
             #ranges["lab"].append(color_spaces_ranges[1])
@@ -149,6 +150,10 @@ def segmentate(img):
             #ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
         stack = stage3(main_area_img)
+        stack2 = stage3(no_low_sat)
+        stack.append(stack2.lst[3])
+        stack.append(stack2.lst[0])
+        stack.append(stack2.lst[5])
 
 
     return stack
@@ -220,6 +225,11 @@ def edge_segmentation(img):
     main_area_img = cv2.bitwise_and(img, img, mask=normalized)
 
     return main_area_img
+
+
+
+
+
 
 
 def stage0(img, aWeight):

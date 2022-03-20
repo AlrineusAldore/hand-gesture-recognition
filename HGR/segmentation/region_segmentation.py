@@ -1,3 +1,4 @@
+from segmentation.helpers import open_close
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ def region_based_segmentation(img):
 def segmentate_from_channel(channel_img):
     # channel_img is gray_img at first
     markers = np.zeros_like(channel_img)
-    markers[channel_img < 30] = 2
+    markers[channel_img < 60] = 2
     markers[channel_img > 150] = 1
 
     elevation_map = sobel(channel_img)  # Get edges
@@ -30,10 +31,9 @@ def segmentate_from_channel(channel_img):
 
 
 
-def plot_hist(hist, name):
-    plt.cla()
-    plt.plot(hist, color='gray', label=name)
-    plt.title(f"{name}Min:{hist.argmin()}, {name}Max:{hist.argmax()}")
+def threshold_white(img):
+    sat = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 1]
+    no_low_sat = cv2.inRange(sat, 10, 255)
+    bin_sat_done, sat_done = open_close(img, no_low_sat)
 
-    plt.legend()
-    plt.pause(0.001)
+    return bin_sat_done, sat_done

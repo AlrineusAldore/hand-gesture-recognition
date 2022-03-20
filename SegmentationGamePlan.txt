@@ -1,7 +1,5 @@
 segmentation plan:
 
-	weighted background:
-		-do that
+	if contour touches hsv, fill contour
+	threshold white outta there
 	
-	
-	-fix color-spaces order to rgb->lab->hsv

@@ -1,6 +1,7 @@
 from constants import *
 import matplotlib.pyplot as plt
 import scipy.signal as signal
+import cv2
 
 
 def start_segmentation_plot(hist1, hist2, hist3, colors_space):
@@ -206,3 +207,15 @@ def get_useful_extrema(f):
 
 def check_all_zero(iterable):
   return all(v == 0 for v in iterable)
+
+
+
+def open_close(img, bin_img, kernel_size=(3,3)):
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernel_size)
+
+    closing_mask = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, kernel)
+
+    opening_mask = cv2.morphologyEx(closing_mask, cv2.MORPH_OPEN, kernel)
+    opening_mask_res = cv2.bitwise_and(img, img, mask=opening_mask)
+
+    return opening_mask, opening_mask_res
