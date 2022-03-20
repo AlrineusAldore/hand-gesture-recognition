@@ -117,6 +117,7 @@ def segmentate(img):
     global ranges
     main_area_img = edge_segmentation(img)
     b, no_low_sat = rsgm.threshold_white(main_area_img)
+    rsgm.get_contours(main_area_img)
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:

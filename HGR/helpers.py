@@ -46,8 +46,8 @@ def autoCropBinImg(bin):
 
 
 # Find contours from img, and draw them on imgContour and imgCanvas
-def draw_contours(img, imgContour, imgCanvas):
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+def draw_contours(img, imgContour, imgCanvas, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True):
+    contours, hierarchy = cv2.findContours(img, retrieval_method, cv2.CHAIN_APPROX_NONE)
 
     significant_contours = []
 
@@ -59,11 +59,12 @@ def draw_contours(img, imgContour, imgCanvas):
             cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
             cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 2)
 
-            peri = cv2.arcLength(cnt, True)  # perimeter
-            approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
-            # print("approx: ", approx)
-            cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 3)
-            cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
+            if draw_pts:
+                peri = cv2.arcLength(cnt, True)  # perimeter
+                approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
+                # print("approx: ", approx)
+                cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 3)
+                cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
 
             significant_contours.append(cnt)
 
