@@ -1,13 +1,11 @@
 from commands.constants import *
+from info_handlers.data import Data
 import screen_brightness_control as sbc
 
 
 class CommandsHandler:
-    def __init__(self, data=None):
-        if data is None:
-            self.data = {}
-        else:
-            self.data = data
+    def __init__(self, data=Data()):
+        self.data = data
 
         self.mouse_controlled = False
 
@@ -18,9 +16,7 @@ class CommandsHandler:
 
     #  Do appropriate commands based on how many fingers are up
     def count_fingers(self):
-        cnt = None
-        if "fings_count" in self.data:
-            cnt = self.data["fings_count"]
+        cnt = self.data.fings_count
 
         #  Do nothing if there are no fingers up
         if cnt is None or cnt == 0:

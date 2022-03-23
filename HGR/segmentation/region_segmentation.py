@@ -1,5 +1,5 @@
 from segmentation.helpers import open_close
-import stack.stack as stk
+import info_handlers.stack as stk
 from helpers import draw_contours
 import cv2
 import numpy as np
@@ -43,19 +43,19 @@ def threshold_white(img):
 
 def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edge = cv2.Canny(gray, 50, 50)
+    edge = cv2.Canny(gray, 50, 50)
+    edge = cv2.Canny(gray, 50, 50)
 
-    contours_list, hierarchy = cv2.findContours(gray.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-    contours_extr, hierarchy = cv2.findContours(gray.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    contours_comp, hierarchy = cv2.findContours(gray.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
-    contours_tree, hierarchy = cv2.findContours(gray.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    img_contour = img.copy()
+    img_canvas = img.copy()
+    img_canvas[:] = 0,0,0
 
-    contours_types = [contours_list, contours_extr, contours_comp, contours_tree]
-    #stack = stk.Stack([contours_list, contours_extr, contours_comp, contours_tree,
-    #                   img, gray], size=(2, 4))
-    for cnts in contours_types:
-        sig_contours = draw_contours(img)
+    sig_contours = draw_contours(edge, img_contour, img_canvas, draw_pts=False)
 
-    cv2.imshow("contours", gray)
+    stack = stk.Stack([img, gray, edge, img_contour, img_canvas])
+
+    cv2.imshow("contours", stack.to_viewable_stack(2))
 
 
 

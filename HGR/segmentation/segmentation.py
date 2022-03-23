@@ -206,14 +206,14 @@ def hsv_differentiation(img, is_plot=False, manually=False, has_params=False, pa
 
 
     if manually and not is_plot:
-        h1Min = cv2.getTrackbarPos("Val1 Min", "Trackbars")
-        h1Max = cv2.getTrackbarPos("Val1 Max", "Trackbars")
+        h1Min = cv2.getTrackbarPos("Hue1 Min", "Trackbars")
+        h1Max = cv2.getTrackbarPos("Hue1 Max", "Trackbars")
         h2Min = cv2.getTrackbarPos("Hue2 Min", "Trackbars")
         h2Max = cv2.getTrackbarPos("Hue2 Max", "Trackbars")
-        sMin = cv2.getTrackbarPos("Val2 Min", "Trackbars")
-        sMax = cv2.getTrackbarPos("Val2 Max", "Trackbars")
-        vMin = cv2.getTrackbarPos("Val3 Min", "Trackbars")
-        vMax = cv2.getTrackbarPos("Val3 Max", "Trackbars")
+        sMin = cv2.getTrackbarPos("Sat Min", "Trackbars")
+        sMax = cv2.getTrackbarPos("Sat Max", "Trackbars")
+        vMin = cv2.getTrackbarPos("Val Min", "Trackbars")
+        vMax = cv2.getTrackbarPos("Val Max", "Trackbars")
 
     range = (h1Min, h1Max, sMin, sMax, vMin, vMax)
 

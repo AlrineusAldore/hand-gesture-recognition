@@ -1,10 +1,11 @@
 from constants import EMPTY_HISTO
 from analysis import mouse_handler
+from info_handlers.data import Data
 from gui import gui_handler as gui
 from cython_funcs import helpers_cy as cy
 import segmentation.segmentation as sgm
 import segmentation.region_segmentation as rsgm
-import stack.stack as stk
+import info_handlers.stack as stk
 import analysis.fingers as fings
 import analysis.points as pts
 import analysis.general as general
@@ -19,7 +20,7 @@ import time
 #recist code
 
 
-VID_NAME = "Videos\\handGesturesVid2.mp4"
+VID_NAME = "Videos\\handGesturesVid.mp4"
 SET_VALUES_MANUALLY = False
 
 stage = [1]
@@ -40,13 +41,13 @@ def main():
 
     #print("cython output:", cy.test(5))
     #analyze_capture(VID_NAME, 0, app)  # Analyzing a video with gui
-    #analyze_capture(VID_NAME, 0, 0)  # Analyzing a video
-    analyze_capture(0, 0, 0)  # Analyzing camera
+    #analyze_capture(VID_NAME, 0)  # Analyzing a video
+    analyze_capture(0, 0)  # Analyzing camera
 
 
 
 # Fully analyzes a whole capture
-def analyze_capture(cap_path, frames_to_skip, app):
+def analyze_capture(cap_path, frames_to_skip, app=None):
     cap = cv2.VideoCapture(cap_path)
     n = 0
     cmds_handler = cmds.CommandsHandler()
@@ -72,7 +73,7 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         img = cv2.flip(img, 1) #unmirror the image
 
-        analyze_frame(img, cmds_handler)
+        analyze_frame(img, cmds_handler, is_manual=False)
         #cv2.waitKey(0)
 
         ##end_tot = time.time()
@@ -98,7 +99,7 @@ def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
-        img_hsv, ready_binary, ready_img, range = sgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
+        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
 
         stack, data = analyze_segmentated_img(ready_img, ready_binary)
         execute_commands(data, cmds_handler)
@@ -263,8 +264,10 @@ def segment_bg(img, threshold=25):
         return (thresholded, segmented)
 
 
+
+
 def analyze_segmentated_img(img, binary):
-    data = {}  # To store all the data and use it to execute the right command
+    data = Data()  # To store all the data and use it to execute the right command
     stack = stk.Stack()
 
     blank_img = img.copy()
@@ -298,10 +301,7 @@ def analyze_segmentated_img(img, binary):
 
     #  Add number of fingers up to data
     if (fings_count == fings_count_pts):
-        data["fings_count"] = fings_count
-    else:
-        data["fings_count"] = None
-
+        data.fings_count = fings_count
 
     return stack, data
 
