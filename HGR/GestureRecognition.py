@@ -3,8 +3,8 @@ from analysis import mouse_handler
 from info_handlers.data import Data
 from gui import gui_handler as gui
 from cython_funcs import helpers_cy as cy
+import segmentation.color_segmentation as csgm
 import segmentation.segmentation as sgm
-import segmentation.region_segmentation as rsgm
 import info_handlers.stack as stk
 import analysis.fingers as fings
 import analysis.points as pts
@@ -99,7 +99,7 @@ def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
-        img_hsv, ready_binary, ready_img = sgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
+        img_hsv, ready_binary, ready_img = csgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
 
         stack, data = analyze_segmentated_img(ready_img, ready_binary)
         execute_commands(data, cmds_handler)
@@ -117,8 +117,8 @@ def segmentate(img):
     stack = None
     global ranges
     main_area_img = edge_segmentation(img)
-    b, no_low_sat = rsgm.threshold_white(main_area_img)
-    rsgm.get_contours(main_area_img)
+    b, no_low_sat = sgm.threshold_white(main_area_img)
+    sgm.get_contours(main_area_img)
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
@@ -147,7 +147,7 @@ def segmentate(img):
     # In stage 3, use the calculated range from the ranges
     elif stage[0] == 3:
         if clock_has_not_started[0]:
-            ranges["hsv"] = sgm.compute_best_range(ranges["hsv"])
+            ranges["hsv"] = csgm.compute_best_range(ranges["hsv"])
             #ranges["lab"] = sgm.compute_best_range(ranges["lab"])
             #ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
@@ -163,10 +163,10 @@ def segmentate(img):
 
 def stage1(img):
     color = (255, 0, 0) # stage 1 is blue
-    square_img, small = sgm.get_square(img, color)
+    square_img, small = csgm.get_square(img, color)
 
     try:
-        hsv_small, hsv_small_no_bg, hsv_small_bin = list(sgm.hsv_differentiation(small, seg_type=0, is_plot=False))
+        hsv_small, hsv_small_no_bg, hsv_small_bin = list(csgm.hsv_differentiation(small, seg_type=0, is_plot=False))
         #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
@@ -184,10 +184,10 @@ def stage1(img):
 
 def stage2(img):
     color = (0, 255, 0) #stage 2 is green
-    square_img, small = sgm.get_square(img, color)
+    square_img, small = csgm.get_square(img, color)
 
     try:
-        hsv_small, hsv_small_no_bg, hsv_small_bin, hsv_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=0))
+        hsv_small, hsv_small_no_bg, hsv_small_bin, hsv_range = list(csgm.hsv_differentiation(small, get_range=True, seg_type=0))
         #lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=2))
 
@@ -204,8 +204,8 @@ def stage2(img):
 
 def stage3(img):
     # Separate hand from background through hsv difference
-    hsv_img, hsv_avg_bin, hsv_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
-    hsv_img, hsv_edge_bin, hsv_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
+    hsv_img, hsv_avg_bin, hsv_avg_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
+    hsv_img, hsv_edge_bin, hsv_edge_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
     #lab_img, lab_avg_bin, lab_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][0], seg_type=1)
     #lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
     #rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
@@ -221,7 +221,7 @@ def edge_segmentation(img):
     scale = 31
     img_blur = cv2.GaussianBlur(img,(scale,scale),1)
 
-    blur_vars = rsgm.region_based_segmentation(img_blur)
+    blur_vars = sgm.region_based_segmentation(img_blur)
     normalized = helpers.normalize_zero1_to_zero255(blur_vars[1])
 
     main_area_img = cv2.bitwise_and(img, img, mask=normalized)
