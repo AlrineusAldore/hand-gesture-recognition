@@ -189,11 +189,11 @@ def hsv_differentiation(img, is_plot=False, manually=False, has_params=False, pa
         sMax = params[3]
         vMin = params[4]
         vMax = params[5]
-        h2Min = h1Min
-        h2Max = h1Max
+        h2Min = 1
+        h2Max = 12
     elif seg_type == 0:
         h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(img_hsv, is_plot, 'hsv')
-        h2Min = 0  # These 2 values always appear on the hand
+        h2Min = 1  # These 2 values always appear on the hand
         h2Max = 12
     elif seg_type == 1:
         h1Min, h1Max, sMin, sMax, vMin, vMax = analyze_colorspace(lab_img, is_plot, 'lab')

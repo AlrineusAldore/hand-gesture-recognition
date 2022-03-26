@@ -210,7 +210,7 @@ def stage3(img):
     #lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
     #rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
     #rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
-
+    #hue = hsv_img[:, :, 0] # to view hue with breakpoint
     stack = stk.Stack([img, hsv_img, hsv_avg_bin,
                        hsv_avg_no_bg, hsv_edge_bin, hsv_edge_no_bg], size=(2,3))
 
