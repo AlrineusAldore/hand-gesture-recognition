@@ -46,14 +46,14 @@ def autoCropBinImg(bin):
 
 
 # Find contours from img, and draw them on imgContour and imgCanvas
-def draw_contours(img, imgContour, imgCanvas, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True):
+def draw_contours(img, imgContour, imgCanvas, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True, min_area=20):
     contours, hierarchy = cv2.findContours(img, retrieval_method, cv2.CHAIN_APPROX_NONE)
 
     significant_contours = []
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > 20:  # to discard small random lines
+        if area > min_area:  # to discard small random lines
             # print("cuntour: ", cnt)
             # print('area: ', area)
             cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
@@ -73,6 +73,13 @@ def draw_contours(img, imgContour, imgCanvas, retrieval_method=cv2.RETR_EXTERNAL
 
 def normalize_zero1_to_zero255(img):
     return (img*255).astype(np.uint8)
+
+def get_gray_blurred_img(img, blur=(1,1)):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return cv2.GaussianBlur(gray, blur, 0)
+
+def get_blank_img(img):
+    return np.zeros(img.shape, img.dtype)
 
 
 def timer(seconds, stage, not_started_clock):

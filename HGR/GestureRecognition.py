@@ -26,6 +26,7 @@ SET_VALUES_MANUALLY = False
 stage = [1]
 ranges = {"hsv":[], "lab":[], "rgb":[]}
 clock_has_not_started = [True]
+bg = None
 
 
 def main():
@@ -63,39 +64,48 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
             cap = cv2.VideoCapture(cap_path)
             success, img = cap.read()
 
+        n += 1
         # skips N frames
         if frames_to_skip > 1:
-            n += 1
             if n % frames_to_skip != 0:
                 cap.grab()
                 continue
-            n = 0
+            #n = 0
 
         img = cv2.flip(img, 1) #unmirror the image
 
-        analyze_frame(img, cmds_handler, is_manual=False)
+        if n < 30:
+            analyze_frame(img, cmds_handler, n, is_manual=False, is_calc_avg_bg=True)
+        else:
+            analyze_frame(img, cmds_handler, n, is_manual=False)
         #cv2.waitKey(0)
 
         ##end_tot = time.time()
         ##print("time for everything:", end_tot-start_tot)
         ##print("percentage of time of stack compared to everything:", str(int((end-start)/(end_tot-start_tot))*100) + "%")
 
-        #if 'q' is pressed, close all windows and break loop
+        #if 'q' is pressed, release cap, close all windows, and break loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            cap.release()
             cv2.destroyAllWindows()
             break
 
 
 
-def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
+def analyze_frame(img, cmds_handler, n, is_calc_avg_bg=False, is_manual=False):
     #img = img[160:490, 0:330]
     #cv2.imshow("og", img)
     img = cv2.resize(img, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_AREA)
     scale = 1.9
+    global bg
 
 
-    if is_edge_seg:
-        stack = stk.Stack(edge_segmentation(img))
+    if is_calc_avg_bg:
+        # Convert to gray and blur
+        gray = helpers.get_gray_blurred_img(img)
+        run_avg(gray, aWeight=0.5)
+        stack = stk.Stack([img, gray, bg.astype(np.uint8)], size=(1,3))
+        #testt = bg.copy()
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
@@ -116,6 +126,11 @@ def analyze_frame(img, cmds_handler, is_edge_seg=False, is_manual=False):
 def segmentate(img):
     stack = None
     global ranges
+    thresholded, arm_bin = segment_bg(img)
+    arm_img = cv2.bitwise_and(img, img, mask=arm_bin)
+    stack = stk.Stack([img, thresholded, arm_bin, arm_img])
+    return stack
+
     main_area_img = edge_segmentation(img)
     b, no_low_sat = sgm.threshold_white(main_area_img)
     sgm.get_contours(main_area_img)
@@ -181,7 +196,6 @@ def stage1(img):
     return stack
 
 
-
 def stage2(img):
     color = (0, 255, 0) #stage 2 is green
     square_img, small = csgm.get_square(img, color)
@@ -217,6 +231,7 @@ def stage3(img):
     return stack
 
 
+
 def edge_segmentation(img):
     scale = 31
     img_blur = cv2.GaussianBlur(img,(scale,scale),1)
@@ -234,34 +249,40 @@ def edge_segmentation(img):
 
 
 
-def stage0(img, aWeight):
+def run_avg(img_gray, aWeight):
     global bg
     # initialize the background
     if bg is None:
-        bg = img.copy().astype("float")
+        bg = img_gray.copy().astype("float")
         return
 
     # compute weighted average, accumulate it and update the background
-    cv2.accumulateWeighted(img, bg, aWeight)
+    cv2.accumulateWeighted(img_gray, bg, aWeight)
+
 
 def segment_bg(img, threshold=25):
     global bg
+    gray = helpers.get_gray_blurred_img(img)
     # find the absolute difference between background and current frame
-    diff = cv2.absdiff(bg.astype("uint8"), img)
+    diff = cv2.absdiff(bg.astype("uint8"), gray)
+    arm_bin = helpers.get_blank_img(gray)
 
     # threshold the diff image so that we get the foreground
-    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)[1]
+    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY_INV)[1]
 
     # get the contours in the thresholded image
-    (_, cnts, _) = cv2.findContours(thresholded.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts, _ = cv2.findContours(thresholded.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # return None, if no contours detected
-    if len(cnts) == 0:
-        return
+    if cnts is None or len(cnts) == 0:
+        return thresholded, arm_bin
     else:
         # based on contour area, get the maximum contour which is the hand
         segmented = max(cnts, key=cv2.contourArea)
-        return (thresholded, segmented)
+        cv2.fillPoly(arm_bin, pts=[segmented], color=255)
+        return (thresholded, arm_bin)
+
+
 
 
 
@@ -304,8 +325,6 @@ def analyze_segmentated_img(img, binary):
         data.fings_count = fings_count
 
     return stack, data
-
-
 
 
 
