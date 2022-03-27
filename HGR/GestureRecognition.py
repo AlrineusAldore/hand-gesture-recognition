@@ -149,7 +149,7 @@ def segment(img):
 
     stack3 = stk.Stack([stack.lst[1], stack2.lst[1], stack.lst[2], stack2.lst[2], stack.lst[4], stack2.lst[4], both_arms_bin, both_arms_img])
     #cv2.imshow("hihihi", stack3.to_viewable_stack(2))
-    return stack3
+
     main_area_img = both_arms_img #edge_segmentation(arm_img)
 
     b, no_low_sat = sgm.threshold_low_sat(main_area_img)
