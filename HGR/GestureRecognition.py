@@ -146,14 +146,10 @@ def segmentate(img):
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
         if clock_has_not_started[0]:
-            # Be in stage 1 for 3 seconds
-            #t = threading.Thread(target=helpers.timer, args=(6, stage, clock_has_not_started))
-            #t.start()
             if cv2.waitKey(1) & 0xFF == ord('g'):
                 print("g pressed")
                 stage[0] += 1
                 clock_has_not_started[0] = True
-            #clock_has_not_started[0] = False
         stack = stage1(wanted_img)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
@@ -165,20 +161,12 @@ def segmentate(img):
         stack, color_spaces_ranges = stage2(wanted_img)
         if color_spaces_ranges is not None:
             ranges["hsv"].append(color_spaces_ranges)
-            #ranges["lab"].append(color_spaces_ranges[1])
-            #ranges["rgb"].append(color_spaces_ranges[2])
     # In stage 3, use the calculated range from the ranges
     elif stage[0] == 3:
         if clock_has_not_started[0]:
             ranges["hsv"] = csgm.compute_best_range(ranges["hsv"])
-            #ranges["lab"] = sgm.compute_best_range(ranges["lab"])
-            #ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
         stack = stage3(wanted_img, non_seg_img=img)
-        #stack2 = stage3(no_low_sat)
-        #stack.append(stack2.lst[3])
-        #stack.append(stack2.lst[0])
-        #stack.append(stack2.lst[5])
 
 
 
