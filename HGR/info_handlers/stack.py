@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+from helpers import get_blank_img
 
 
 class Stack():
@@ -73,8 +74,7 @@ class Stack():
 
 
     def __create_filler_img(self):
-        filler_img = self.lst[0].copy()
-        filler_img[:] = 0, 0, 0
+        filler_img = get_blank_img(self.lst[0].copy())
 
         if not self.is_filler_empty:
             cv2.putText(filler_img, "filler", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
@@ -101,7 +101,7 @@ class Stack():
                     else:
                         img_array[x][y] = cv2.resize(img_array[x][y], (img_array[0][0].shape[1], img_array[0][0].shape[0]), None, scale, scale)
                     if len(img_array[x][y].shape) == 2:
-                        img_array[x][y] = cv2.cvtColor( img_array[x][y], cv2.COLOR_GRAY2BGR)
+                        img_array[x][y] = cv2.cvtColor(img_array[x][y], cv2.COLOR_GRAY2BGR)
             imageBlank = np.zeros((height, width, 3), np.uint8)
             hor = [imageBlank]*rows
             hor_con = [imageBlank]*rows

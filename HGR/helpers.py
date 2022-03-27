@@ -46,25 +46,30 @@ def autoCropBinImg(bin):
 
 
 # Find contours from img, and draw them on imgContour and imgCanvas
-def draw_contours(img, imgContour, imgCanvas, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True, min_area=20):
-    contours, hierarchy = cv2.findContours(img, retrieval_method, cv2.CHAIN_APPROX_NONE)
+def draw_contours(img, img_contour=None, img_canvas=None, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True, min_area=20, contours=None):
+    if contours is None:
+        contours, hierarchy = cv2.findContours(img, retrieval_method, cv2.CHAIN_APPROX_NONE)
+    if img_contour is None:
+        img_contour = img.copy()
+    if img_canvas is None:
+        img_canvas = get_blank_img(img)
 
     significant_contours = []
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:  # to discard small random lines
-            # print("cuntour: ", cnt)
+            # print("contour: ", cnt)
             # print('area: ', area)
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
-            cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 2)
+            cv2.drawContours(img_contour, cnt, -1, (255, 0, 0), 2)
+            cv2.drawContours(img_canvas, cnt, -1, (255, 0, 0), 2)
 
             if draw_pts:
                 peri = cv2.arcLength(cnt, True)  # perimeter
                 approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
                 # print("approx: ", approx)
-                cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 3)
-                cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
+                cv2.drawContours(img_contour, approx, -1, (0, 255, 0), 3)
+                cv2.drawContours(img_canvas, approx, -1, (0, 255, 0), 3)
 
             significant_contours.append(cnt)
 
@@ -79,7 +84,8 @@ def get_gray_blurred_img(img, blur=(1,1)):
     return cv2.GaussianBlur(gray, blur, 0)
 
 def get_blank_img(img):
-    return np.zeros(img.shape, img.dtype)
+    blank_img = np.zeros(img.shape, img.dtype)
+    return blank_img
 
 
 def timer(seconds, stage, not_started_clock):

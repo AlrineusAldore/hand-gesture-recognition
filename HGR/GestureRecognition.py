@@ -75,9 +75,9 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
         img = cv2.flip(img, 1) #unmirror the image
 
         if n < 30:
-            analyze_frame(img, cmds_handler, n, is_manual=False, is_calc_avg_bg=True)
+            analyze_frame(img, cmds_handler, is_calc_avg_bg=True)
         else:
-            analyze_frame(img, cmds_handler, n, is_manual=False)
+            analyze_frame(img, cmds_handler, is_calc_avg_bg=False)
         #cv2.waitKey(0)
 
         ##end_tot = time.time()
@@ -92,20 +92,20 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
 
 
 
-def analyze_frame(img, cmds_handler, n, is_calc_avg_bg=False, is_manual=False):
+def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
     #img = img[160:490, 0:330]
     #cv2.imshow("og", img)
     img = cv2.resize(img, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_AREA)
     scale = 1.9
-    global bg
 
 
     if is_calc_avg_bg:
         # Convert to gray and blur
         gray = helpers.get_gray_blurred_img(img)
         run_avg(gray, aWeight=0.5)
+
+        # noinspection PyUnresolvedReferences
         stack = stk.Stack([img, gray, bg.astype(np.uint8)], size=(1,3))
-        #testt = bg.copy()
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
@@ -126,12 +126,13 @@ def analyze_frame(img, cmds_handler, n, is_calc_avg_bg=False, is_manual=False):
 def segmentate(img):
     stack = None
     global ranges
-    thresholded, arm_bin = segment_bg(img)
-    arm_img = cv2.bitwise_and(img, img, mask=arm_bin)
-    stack = stk.Stack([img, thresholded, arm_bin, arm_img])
+    stack = segment_bg(img)
+    arm_img = stack.lst[5]
+
+    main_area_img = edge_segmentation(arm_img)
+
     return stack
 
-    main_area_img = edge_segmentation(img)
     b, no_low_sat = sgm.threshold_white(main_area_img)
     sgm.get_contours(main_area_img)
 
@@ -260,28 +261,44 @@ def run_avg(img_gray, aWeight):
     cv2.accumulateWeighted(img_gray, bg, aWeight)
 
 
-def segment_bg(img, threshold=25):
+
+def segment_bg(img, threshold=50):
     global bg
     gray = helpers.get_gray_blurred_img(img)
     # find the absolute difference between background and current frame
+    # noinspection PyUnresolvedReferences
     diff = cv2.absdiff(bg.astype("uint8"), gray)
-    arm_bin = helpers.get_blank_img(gray)
 
     # threshold the diff image so that we get the foreground
-    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY_INV)[1]
+    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)[1]
 
-    # get the contours in the thresholded image
-    cnts, _ = cv2.findContours(thresholded.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    img_max_contour, arm_bin = do_segment_thingy(img, gray, thresholded)
 
-    # return None, if no contours detected
-    if cnts is None or len(cnts) == 0:
-        return thresholded, arm_bin
-    else:
+    arm_img = cv2.bitwise_and(img, img, mask=arm_bin)
+
+    stack = stk.Stack([img, diff, thresholded, img_max_contour, arm_bin, arm_img])
+
+    return stack
+
+
+
+
+def do_segment_thingy(img, gray, edge_or_thresh):
+    arm_bin = helpers.get_blank_img(gray)
+    img_max_contour = helpers.get_blank_img(img)
+
+    # get the contours in the thresholded/edge image
+    cnts, _ = cv2.findContours(edge_or_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # if there are contours, get arm
+    if cnts is not None and len(cnts) > 0:
         # based on contour area, get the maximum contour which is the hand
         segmented = max(cnts, key=cv2.contourArea)
+        helpers.draw_contours(img, img_canvas=img_max_contour, contours=[segmented], min_area=0, draw_pts=False)
         cv2.fillPoly(arm_bin, pts=[segmented], color=255)
-        return (thresholded, arm_bin)
 
+
+    return img_max_contour, arm_bin
 
 
 
