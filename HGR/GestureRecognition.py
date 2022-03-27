@@ -3,6 +3,7 @@ from analysis import mouse_handler
 from info_handlers.data import Data
 from gui import gui_handler as gui
 from cython_funcs import helpers_cy as cy
+from segmentation.helpers import open_close
 import segmentation.color_segmentation as csgm
 import segmentation.segmentation as sgm
 import info_handlers.stack as stk
@@ -131,10 +132,16 @@ def segmentate(img):
 
     main_area_img = edge_segmentation(arm_img)
 
-    return stack
+    b, no_low_sat = sgm.threshold_low_sat(main_area_img)
+    no_white_bin, no_white = sgm.threshold_white_rgb(main_area_img, thresh=150)
+    no_white_bin, no_white2 = sgm.threshold_white_rgb(main_area_img)
 
-    b, no_low_sat = sgm.threshold_white(main_area_img)
-    sgm.get_contours(main_area_img)
+    stack.append(main_area_img)
+    stack.append(no_white)
+    stack.append(no_white2)
+
+    wanted_img = no_white2
+
 
     # In stage 1, just show that we are preparing stage 2
     if stage[0] == 1:
@@ -147,7 +154,7 @@ def segmentate(img):
                 stage[0] += 1
                 clock_has_not_started[0] = True
             #clock_has_not_started[0] = False
-        stack = stage1(no_low_sat)
+        stack = stage1(wanted_img)
     # In stage 2, get the ranges through the histogram
     elif stage[0] == 2:
         if clock_has_not_started[0] and stage[0] == 2:
@@ -155,7 +162,7 @@ def segmentate(img):
             t = threading.Thread(target=helpers.timer, args=(3, stage, clock_has_not_started))
             t.start()
             clock_has_not_started[0] = False
-        stack, color_spaces_ranges = stage2(no_low_sat)
+        stack, color_spaces_ranges = stage2(wanted_img)
         if color_spaces_ranges is not None:
             ranges["hsv"].append(color_spaces_ranges)
             #ranges["lab"].append(color_spaces_ranges[1])
@@ -167,11 +174,12 @@ def segmentate(img):
             #ranges["lab"] = sgm.compute_best_range(ranges["lab"])
             #ranges["rgb"] = sgm.compute_best_range(ranges["rgb"])
             clock_has_not_started[0] = False
-        stack = stage3(main_area_img)
-        stack2 = stage3(no_low_sat)
-        stack.append(stack2.lst[3])
-        stack.append(stack2.lst[0])
-        stack.append(stack2.lst[5])
+        stack = stage3(wanted_img, non_seg_img=img)
+        #stack2 = stage3(no_low_sat)
+        #stack.append(stack2.lst[3])
+        #stack.append(stack2.lst[0])
+        #stack.append(stack2.lst[5])
+
 
 
     return stack
@@ -186,9 +194,9 @@ def stage1(img):
         #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
-        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin], size=(1,5))
+        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], size=(1, 5), is_filler_empty=True)
+        stack = stk.Stack([square_img, small], is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -206,9 +214,9 @@ def stage2(img):
         #lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=2))
 
-        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin], size=(1,5))
+        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], size=(1, 5), is_filler_empty=True)
+        stack = stk.Stack([square_img, small], is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -217,7 +225,7 @@ def stage2(img):
     return stack, (hsv_range)
 
 
-def stage3(img):
+def stage3(img, non_seg_img):
     # Separate hand from background through hsv difference
     hsv_img, hsv_avg_bin, hsv_avg_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
     hsv_img, hsv_edge_bin, hsv_edge_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
@@ -226,8 +234,27 @@ def stage3(img):
     #rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
     #rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
     #hue = hsv_img[:, :, 0] # to view hue with breakpoint
-    stack = stk.Stack([img, hsv_img, hsv_avg_bin,
-                       hsv_avg_no_bg, hsv_edge_bin, hsv_edge_no_bg], size=(2,3))
+
+    dilated_bin = cv2.dilate(hsv_edge_bin, (15,15), iterations=7)
+    dilated_img = cv2.bitwise_and(non_seg_img, non_seg_img, mask=dilated_bin)
+    #closed_img_bin, closed_img = open_close(img, hsv_edge_bin, kernel_size=(12,12), only_close=True)
+    no_white_bin, no_white = sgm.threshold_white_rgb(dilated_img)
+
+
+    sat_bin, sat_img = sgm.threshold_low_sat(no_white, thresh=15)
+    opened_sat_bin, opened_sat = open_close(non_seg_img, sat_bin)
+
+
+    hand_bin = helpers.get_biggest_object(opened_sat_bin)
+    hand_img = cv2.bitwise_and(no_white, no_white, mask=hand_bin)
+
+    no_dark_bin, no_dark_img = sgm.threshold_dark_spots(hand_img, thresh=45)
+    hand_bin2 = helpers.get_biggest_object(no_dark_bin)
+    hand_img2 = cv2.bitwise_and(no_white, no_white, mask=hand_bin2)
+
+    stack = stk.Stack([img, hsv_img, hsv_edge_bin, hsv_edge_no_bg,
+                       dilated_img, no_white, sat_img, opened_sat,
+                       hand_bin, hand_img, no_dark_img, hand_img2], size=(3,4), hand_img=hand_img2)
 
     return stack
 

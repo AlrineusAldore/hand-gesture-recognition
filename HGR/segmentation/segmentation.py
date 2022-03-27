@@ -32,19 +32,39 @@ def segmentate_from_channel(channel_img):
     return elevation_map, labeled_img
 
 
-def threshold_white(img):
+def threshold_low_sat(img, thresh=10):
     sat = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 1]
-    no_low_sat = cv2.inRange(sat, 10, 255)
-    bin_sat_done, sat_done = open_close(img, no_low_sat)
+    no_low_sat = cv2.inRange(sat, thresh, 255)
+    sat_bin, sat_img = open_close(img, no_low_sat)
 
-    return bin_sat_done, sat_done
+    return sat_bin, sat_img
+
+
+def threshold_white_rgb(img, thresh=125):
+    lower = np.array([thresh, thresh, thresh])
+    upper = np.array([255, 255, 255])
+
+    white_mask = cv2.inRange(img, lower, upper)
+    non_white_mask = cv2.bitwise_not(white_mask)
+    img_mask_res = cv2.bitwise_and(img, img, mask=non_white_mask)
+
+    mask_bin = cv2.threshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), 1, 255, cv2.THRESH_BINARY)[1] #original bin included black as hand
+
+    return mask_bin, img_mask_res
+
+
+def threshold_dark_spots(img, thresh=40):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    no_dark_bin = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+    no_dark_img = cv2.bitwise_and(img, img, mask=no_dark_bin)
+
+    return no_dark_bin, no_dark_img
+
 
 
 
 def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    edge = cv2.Canny(gray, 50, 50)
-    edge = cv2.Canny(gray, 50, 50)
     edge = cv2.Canny(gray, 50, 50)
 
     img_contour = img.copy()

@@ -5,13 +5,14 @@ from helpers import get_blank_img
 
 
 class Stack():
-    def __init__(self, lst=None, size=(1,1), is_filler_empty=False):
+    def __init__(self, lst=None, size=(1,1), is_filler_empty=False, hand_img=None):
         if lst is None:
             lst = []
         self.lst = lst
         self.size = size
         self.img_stack = None
         self.is_filler_empty = is_filler_empty
+        self.hand_img = hand_img
 
         self.organize(size)
 
@@ -74,7 +75,7 @@ class Stack():
 
 
     def __create_filler_img(self):
-        filler_img = get_blank_img(self.lst[0].copy())
+        filler_img = get_blank_img(self.lst[0])
 
         if not self.is_filler_empty:
             cv2.putText(filler_img, "filler", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)

@@ -87,6 +87,27 @@ def get_blank_img(img):
     blank_img = np.zeros(img.shape, img.dtype)
     return blank_img
 
+def get_biggest_object(img, thresh=1):
+    # if img is rgb then turn it to gray
+    if len(img.shape) == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+
+    bin = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)[1]
+    biggest_object_bin = get_blank_img(bin)
+
+    cnts, _ = cv2.findContours(bin.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # if there are contours, get biggest object
+    if cnts is not None and len(cnts) > 0:
+        # based on contour area, get the maximum contour which is the biggest object
+        segmented = max(cnts, key=cv2.contourArea)
+        cv2.fillPoly(biggest_object_bin, pts=[segmented], color=255)
+
+    return biggest_object_bin
+
+
 
 def timer(seconds, stage, not_started_clock):
     time.sleep(seconds)

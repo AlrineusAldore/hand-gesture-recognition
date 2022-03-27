@@ -210,12 +210,15 @@ def check_all_zero(iterable):
 
 
 
-def open_close(img, bin_img, kernel_size=(3,3)):
+def open_close(non_seg_img, bin_img, kernel_size=(3,3), only_close=False):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernel_size)
 
     closing_mask = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, kernel)
+    if only_close:
+        closing_mask_res = cv2.bitwise_and(non_seg_img, non_seg_img, mask=closing_mask)
+        return closing_mask, closing_mask_res
 
     opening_mask = cv2.morphologyEx(closing_mask, cv2.MORPH_OPEN, kernel)
-    opening_mask_res = cv2.bitwise_and(img, img, mask=opening_mask)
+    opening_mask_res = cv2.bitwise_and(non_seg_img, non_seg_img, mask=opening_mask)
 
     return opening_mask, opening_mask_res
