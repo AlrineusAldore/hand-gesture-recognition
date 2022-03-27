@@ -139,7 +139,7 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
 def segment(img):
     stack = None
     global ranges
-    stack = segment_bg(img, threshold=25)
+    stack = segment_bg(img, threshold=40)
     stack2 = segment_bg(img, threshold=20, is_sat=True)
     arm_img = stack.lst[5]
     arm_img2 = stack2.lst[5]
@@ -147,7 +147,7 @@ def segment(img):
     both_arms_bin = cv2.bitwise_and(stack.lst[4], stack2.lst[4])
     both_arms_img = cv2.bitwise_and(img, img, mask=both_arms_bin)
 
-    stack3 = stk.Stack([stack.lst[1], stack2.lst[1], stack.lst[4], stack2.lst[4], both_arms_bin, both_arms_img])
+    stack3 = stk.Stack([stack.lst[1], stack2.lst[1], stack.lst[2], stack2.lst[2], stack.lst[4], stack2.lst[4], both_arms_bin, both_arms_img])
     #cv2.imshow("hihihi", stack3.to_viewable_stack(2))
     return stack3
     main_area_img = both_arms_img #edge_segmentation(arm_img)
