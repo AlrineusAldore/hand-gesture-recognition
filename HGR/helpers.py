@@ -59,15 +59,12 @@ def draw_contours(img, img_contour=None, img_canvas=None, retrieval_method=cv2.R
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:  # to discard small random lines
-            # print("contour: ", cnt)
-            # print('area: ', area)
             cv2.drawContours(img_contour, cnt, -1, (255, 0, 0), 2)
             cv2.drawContours(img_canvas, cnt, -1, (255, 0, 0), 2)
 
             if draw_pts:
                 peri = cv2.arcLength(cnt, True)  # perimeter
                 approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
-                # print("approx: ", approx)
                 cv2.drawContours(img_contour, approx, -1, (0, 255, 0), 3)
                 cv2.drawContours(img_canvas, approx, -1, (0, 255, 0), 3)
 

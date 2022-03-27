@@ -17,6 +17,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import threading
 import time
+import sql.mySQL as sqlit
+db = sqlit.database()
 
 #recist code
 
@@ -217,15 +219,10 @@ def stage3(img, non_seg_img):
     # Separate hand from background through hsv difference
     hsv_img, hsv_avg_bin, hsv_avg_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
     hsv_img, hsv_edge_bin, hsv_edge_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
-    #lab_img, lab_avg_bin, lab_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][0], seg_type=1)
-    #lab_img, lab_edge_bin, lab_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["lab"][1], seg_type=1)
-    #rgb_img, rgb_avg_bin, rgb_avg_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][0], seg_type=2)
-    #rgb_img, rgb_edge_bin, rgb_edge_no_bg = sgm.hsv_differentiation(img, has_params=True, params=ranges["rgb"][1], seg_type=2)
     #hue = hsv_img[:, :, 0] # to view hue with breakpoint
 
     dilated_bin = cv2.dilate(hsv_edge_bin, (15,15), iterations=7)
     dilated_img = cv2.bitwise_and(non_seg_img, non_seg_img, mask=dilated_bin)
-    #closed_img_bin, closed_img = open_close(img, hsv_edge_bin, kernel_size=(12,12), only_close=True)
     no_white_bin, no_white = sgm.threshold_white_rgb(dilated_img)
 
 
@@ -338,14 +335,15 @@ def analyze_segmentated_img(img, binary):
 
     fingers = cv2.subtract(binary, circle, mask=None)
     fingers, fings_count = fings.find_fingers(fingers)
-    cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
+    #cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
 
     img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), binary)
     img_pts = mouse_handler.show_north_extreme_points(img.copy(), binary, fings_count)
     stack.append(img)
 
 
-
+    fings_width_len_list = str(fings.get_fingers_data(fingers))
+    db.update("fings_width_len_list", '\"' + fings_width_len_list + '\"')
     stack.lst += [img_transformed, center_img, circle, fingers]
     stack.lst += [binary, img]
     stack.lst += [img_hsv_pts, img_pts]
