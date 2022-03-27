@@ -120,9 +120,15 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
         stack = segment(img)
 
     if stack.hand_img is not None:
-        gray = cv2.cvtColor(stack.hand_img, cv2.COLOR_BGR2GRAY)
+        im = stack.hand_img
+        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
         binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)[1]
-        analyze_segmented_img(stack.hand_img, binary)
+        try:
+            stack, data = analyze_segmented_img(im, binary)
+            execute_commands(data, cmds_handler)
+        except Exception as e:
+            stack = stk.Stack([im])
+            print(e)
 
     #app.frame.panel.put_img(stack)
     cv2.imshow("stack", stack.to_viewable_stack(scale))
@@ -146,6 +152,7 @@ def segment(img):
     stack.append(no_white)
     stack.append(no_white2)
 
+    cv2.imshow("hihi", stack.to_viewable_stack(2))
     wanted_img = no_white2
 
 
@@ -221,7 +228,6 @@ def stage2(img):
 
 def stage3(img, non_seg_img):
     # Separate hand from background through hsv difference
-    hsv_img, hsv_avg_bin, hsv_avg_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][0], seg_type=0)
     hsv_img, hsv_edge_bin, hsv_edge_no_bg = csgm.hsv_differentiation(img, has_params=True, params=ranges["hsv"][1], seg_type=0)
     #hue = hsv_img[:, :, 0] # to view hue with breakpoint
 
@@ -241,9 +247,8 @@ def stage3(img, non_seg_img):
     hand_bin2 = helpers.get_biggest_object(no_dark_bin)
     hand_img2 = cv2.bitwise_and(no_white, no_white, mask=hand_bin2)
 
-    stack = stk.Stack([img, hsv_img, hsv_edge_bin, hsv_edge_no_bg,
-                       dilated_img, no_white, sat_img, opened_sat,
-                       hand_bin, hand_img, no_dark_img, hand_img2], size=(3,4), hand_img=hand_img2)
+    stack = stk.Stack([img, hsv_img, hsv_edge_no_bg,
+                       dilated_img, hand_img, no_dark_img, hand_img2], size=(2,4), hand_img=hand_img2)
 
     return stack
 

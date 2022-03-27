@@ -8,8 +8,6 @@ db = sqlit.database()
 # Draws extreme points on image and returns it
 # and add them to database
 def show_extreme_points(img, binary):
-    ext_left, ext_right, ext_top, ext_bot = pts.extreme_points(binary)
-
     ext = pts.extreme_points(binary)
     if ext is None:
         return img
@@ -38,4 +36,5 @@ def set_mouse_point(mouse_point):
     curr = mouse.get_position()
     # Needs to change to mouse.move() with combination of mouse.press() and mouse.release()
     #mouse.drag(curr[0], curr[1], mouse_point[0], mouse_point[1], absolute=False, duration=0.1)
+    mouse.move(mouse_point[0]-curr[0], mouse_point[1]-curr[1], absolute=False, duration=120)
 

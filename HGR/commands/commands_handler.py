@@ -54,4 +54,4 @@ class CommandsHandler:
 #  changes the brightness by val
 def change_brightness(val):
     b = sbc.get_brightness(display=0)
-    #sbc.set_brightness(b+val, display=0)
+    sbc.set_brightness(b+val, display=0)
