@@ -1,24 +1,40 @@
 import sqlite3
 
-con = sqlite3.connect('haha.db')
+con = sqlite3.connect('hrtr.db')
 cur = con.cursor()
+#               DATABASE STRUCTURE
+#...............................................................................................................................
+#:  angles   :       extream_points       : fingers_count :   between_finger_points    :  fingers_lemfings_width_len_list gth  :
+#:...........:............................:...............:............................:.......................................:
+#: text list : text list of points tuples : int           : text list of points tuples : text list of tuples(width, length)    :
+#:...........:............................:...............:............................:..................:....................:
+
+
 
 class database:
     def __init__(self):
-        # Create angles table
-        self.creatTable("HAND_DATA", "ANGLES_INDEX INTEGER, EXTREAM_POINTS_INDEX INTEGER, FINGER_COUNT INTEGER,"
-                                     " BETEEN_FINGER_POINTS_INDEX INTEGER")
-        self.creatTable("ANGLES", "ANGLES_LIST TEXT")
-        self.creatTable("EXTREAM_POINTS",  "POINTS_LIST TEXT")
-        self.creatTable("BETEEN_FINGER_POINTS",  "POINTS_LIST TEXT")
+        self.creatTable("HAND_DATA",
+                        "frame_id int,"
+                        "angles text,"
+                        "extream_points text,"
+                        "fingers_count INTEGER,"
+                        "between_points text,"
+                        "fings_width_len_list text")
+
+        self.insertData("1, null, null, null, null, null")
+
+    def update(self, colName , strdata):
+        cur.execute("UPDATE HAND_DATA SET " + colName + " = " + strdata + " WHERE frame_id = 1;")
+        con.commit()
 
     def creatTable(self, tableName, columsName):
-        cur.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" + columsName +")")
+        cur.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" + columsName +");")
+        con.commit()
 
-    def insertData(self, tableName, dataStr):
+    def insertData(self, dataStr):
         # Insert a row of data
 
-        cur.execute("INSERT INTO " + tableName + " VALUES (" + dataStr + ")")
+        cur.execute("INSERT INTO HAND_DATA VALUES (" + dataStr + ")")
 
         # Save (commit) the changes
         con.commit()

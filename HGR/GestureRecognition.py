@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from gui import gui_handler as gui
 import commands.commands_handler as cmds
 #from cython_funcs import helpers_cy as cy
+import sql.mySQL as sqlit
+db = sqlit.database()
 
 #recist code
 
@@ -83,14 +85,13 @@ def analyze_capture(cap_path, frames_to_skip, app):
 
         fingers = cv2.subtract(ready_binary, circle, mask=None)
         fingers, fings_count = fings.find_fingers(fingers)
-        cv2.putText(fingers, str(fings_count), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2, cv2.LINE_AA)
 
         img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), ready_binary)
         img_pts = mouse_handler.show_north_extreme_points(img.copy(), ready_binary, fings_count)
         frame.append(img)
 
-
-
+        fings_width_len_list = str(fings.get_fingers_data(fingers))
+        db.update("fings_width_len_list", '\"' + fings_width_len_list + '\"')
         frame.lst += [img_transformed, center_img, circle, fingers]
         frame.lst += [img_hsv, ready_binary, ready_img]
         frame.lst += [img_hsv_pts, img_pts]
@@ -126,6 +127,8 @@ def analyze_capture(cap_path, frames_to_skip, app):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
+
+        db.printData()
 
     return frame
 

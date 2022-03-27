@@ -54,11 +54,11 @@ def find_lower_points(img):
             angles.append(angle)
     if cnt > 0:
         cnt = cnt + 1
-    db.insertData("ANGLES", '"' + str(angles) + '"')
-    db.insertData("BETEEN_FINGER_POINTS", '"' + str(points_between_fingers) + '"')
+    db.update("angles", '\"' + str(angles) + '\"')
+    db.update("between_points", '\"' + str(points_between_fingers) + '\"')
 
     cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
-
+    db.update("fingers_count", str(cnt))
     return new_img, cnt
 
 
@@ -74,3 +74,11 @@ def extreme_points(binary_img):
     ext_top = tuple(c[c[:, :, 1].argmin()][0])
     ext_bot = tuple(c[c[:, :, 1].argmax()][0])
     return ext_left, ext_right, ext_top, ext_bot
+
+def findWidth(binary_img):
+    cnts = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    c = max(cnts, key=cv2.contourArea)
+    ext_top = tuple(c[c[:, :, 1].argmin()][0])
+
