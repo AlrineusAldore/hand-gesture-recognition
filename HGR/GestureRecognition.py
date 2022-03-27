@@ -114,11 +114,15 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
         # Separate hand from background through hsv difference but manually
         img_hsv, ready_binary, ready_img = csgm.hsv_differentiation(img, manually=SET_VALUES_MANUALLY)
 
-        stack, data = analyze_segmentated_img(ready_img, ready_binary)
+        stack, data = analyze_segmented_img(ready_img, ready_binary)
         execute_commands(data, cmds_handler)
     else:
-        stack = segmentate(img)
+        stack = segment(img)
 
+    if stack.hand_img is not None:
+        gray = cv2.cvtColor(stack.hand_img, cv2.COLOR_BGR2GRAY)
+        binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)[1]
+        analyze_segmented_img(stack.hand_img, binary)
 
     #app.frame.panel.put_img(stack)
     cv2.imshow("stack", stack.to_viewable_stack(scale))
@@ -126,7 +130,7 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
 
 
 
-def segmentate(img):
+def segment(img):
     stack = None
     global ranges
     stack = segment_bg(img)
@@ -186,7 +190,7 @@ def stage1(img):
 
         stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], is_filler_empty=True)
+        stack = stk.Stack([square_img, small], size=(2, 3), is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -206,7 +210,7 @@ def stage2(img):
 
         stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], is_filler_empty=True)
+        stack = stk.Stack([square_img, small], size=(2, 3), is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -316,7 +320,7 @@ def do_segment_thingy(img, gray, edge_or_thresh):
 
 
 
-def analyze_segmentated_img(img, binary):
+def analyze_segmented_img(img, binary):
     data = Data()  # To store all the data and use it to execute the right command
     stack = stk.Stack()
 
