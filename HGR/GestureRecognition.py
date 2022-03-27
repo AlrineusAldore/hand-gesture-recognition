@@ -99,7 +99,7 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
     #img = img[160:490, 0:330]
     #cv2.imshow("og", img)
     img = cv2.resize(img, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_AREA)
-    scale = 1.9
+    scale = 1.4
 
 
     if is_calc_avg_bg:
@@ -139,10 +139,18 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
 def segment(img):
     stack = None
     global ranges
-    stack = segment_bg(img)
+    stack = segment_bg(img, threshold=25)
+    stack2 = segment_bg(img, threshold=20, is_sat=True)
     arm_img = stack.lst[5]
+    arm_img2 = stack2.lst[5]
 
-    main_area_img = edge_segmentation(arm_img)
+    both_arms_bin = cv2.bitwise_and(stack.lst[4], stack2.lst[4])
+    both_arms_img = cv2.bitwise_and(img, img, mask=both_arms_bin)
+
+    stack3 = stk.Stack([stack.lst[1], stack2.lst[1], stack.lst[4], stack2.lst[4], both_arms_bin, both_arms_img])
+    #cv2.imshow("hihihi", stack3.to_viewable_stack(2))
+    return stack3
+    main_area_img = both_arms_img #edge_segmentation(arm_img)
 
     b, no_low_sat = sgm.threshold_low_sat(main_area_img)
     no_white_bin, no_white = sgm.threshold_white_rgb(main_area_img, thresh=150)
@@ -152,8 +160,8 @@ def segment(img):
     stack.append(no_white)
     stack.append(no_white2)
 
-    cv2.imshow("hihi", stack.to_viewable_stack(2))
-    wanted_img = no_white2
+    #cv2.imshow("hihi", stack.to_viewable_stack(2))
+    wanted_img = both_arms_img
 
 
     # In stage 1, just show that we are preparing stage 2
@@ -180,7 +188,6 @@ def segment(img):
             ranges["hsv"] = csgm.compute_best_range(ranges["hsv"])
             clock_has_not_started[0] = False
         stack = stage3(wanted_img, non_seg_img=img)
-
 
 
     return stack
@@ -233,7 +240,7 @@ def stage3(img, non_seg_img):
 
     dilated_bin = cv2.dilate(hsv_edge_bin, (15,15), iterations=7)
     dilated_img = cv2.bitwise_and(non_seg_img, non_seg_img, mask=dilated_bin)
-    no_white_bin, no_white = sgm.threshold_white_rgb(dilated_img)
+    no_white_bin, no_white = sgm.threshold_white_rgb(dilated_img, thresh=180)
 
 
     sat_bin, sat_img = sgm.threshold_low_sat(no_white, thresh=15)
@@ -249,7 +256,7 @@ def stage3(img, non_seg_img):
 
     stack = stk.Stack([img, hsv_img, hsv_edge_no_bg,
                        dilated_img, hand_img, no_dark_img, hand_img2], size=(2,4), hand_img=hand_img2)
-
+    stack.hand_img=None
     return stack
 
 
@@ -283,9 +290,12 @@ def run_avg(img_gray, aWeight):
 
 
 
-def segment_bg(img, threshold=50):
+def segment_bg(img, threshold=50, is_sat=False):
     global bg
     gray = helpers.get_gray_blurred_img(img)
+    if is_sat:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 1]
+        gray = cv2.GaussianBlur(gray, (3,3), 0)
     # find the absolute difference between background and current frame
     # noinspection PyUnresolvedReferences
     diff = cv2.absdiff(bg.astype("uint8"), gray)
@@ -327,7 +337,6 @@ def do_segment_thingy(img, gray, edge_or_thresh):
 
 def analyze_segmented_img(img, binary):
     data = Data()  # To store all the data and use it to execute the right command
-    stack = stk.Stack()
 
     blank_img = img.copy()
     blank_img[:] = 0, 0, 0
@@ -335,7 +344,6 @@ def analyze_segmented_img(img, binary):
     img_transformed = general.distanceTransform(binary)
 
     lower_points_img, fings_count_pts = pts.find_lower_points(img)
-    stack.append(lower_points_img)
 
     # Find the center of the hand from the distance transformation
     thresh, center_img = cv2.threshold(img_transformed, 253, 255, cv2.THRESH_BINARY)
@@ -348,20 +356,20 @@ def analyze_segmented_img(img, binary):
 
     img_hsv_pts = mouse_handler.show_extreme_points(img.copy(), binary)
     img_pts = mouse_handler.show_north_extreme_points(img.copy(), binary, fings_count)
-    stack.append(img)
 
 
     fings_width_len_list = str(fings.get_fingers_data(fingers))
-    db.update("fings_width_len_list", '\"' + fings_width_len_list + '\"')
-    stack.lst += [img_transformed, center_img, circle, fingers]
-    stack.lst += [binary, img]
-    stack.lst += [img_hsv_pts, img_pts]
-    stack.auto_organize()
+    #db.update("fings_width_len_list", '\"' + fings_width_len_list + '\"')
+
+    stack = stk.Stack([img, binary, lower_points_img, img_transformed,
+                       center_img, circle, fingers, img_hsv_pts, img_pts])
 
 
     #  Add number of fingers up to data
     if (fings_count == fings_count_pts):
         data.fings_count = fings_count
+
+    data.fings_count = fings_count
 
     return stack, data
 

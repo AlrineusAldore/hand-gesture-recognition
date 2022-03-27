@@ -46,8 +46,8 @@ def analyze_colorspace(img, is_plot, colors_space):
         start2, end2 = analyze_channel(hist2, is_plot, 'orange', "smooth "+colors_space[1])
         start3, end3 = analyze_channel(hist3, is_plot, 'cyan', "smooth "+colors_space[2])
     else: #if hsv, ignore saturation & value
-        start1 = 1
-        end1 = 20
+        #start1 = 1
+        #end1 = 20
         if start1 == 0:
             start1 = 1
         start2 = 0

@@ -38,7 +38,7 @@ def autoCropBinImg(bin):
         max_y = max(white_pt_coords[:, 0])
         max_x = max(white_pt_coords[:, 1])
 
-        r = int(sum([max_y - min_y, max_x - min_x]) // 5)
+        r = int(sum([max_y - min_y, max_x - min_x]) // 4)
 
         crop = bin[min_y:max_y, min_x:max_x]
 
@@ -76,7 +76,7 @@ def draw_contours(img, img_contour=None, img_canvas=None, retrieval_method=cv2.R
 def normalize_zero1_to_zero255(img):
     return (img*255).astype(np.uint8)
 
-def get_gray_blurred_img(img, blur=(1,1)):
+def get_gray_blurred_img(img, blur=(3,3)):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return cv2.GaussianBlur(gray, blur, 0)
 
