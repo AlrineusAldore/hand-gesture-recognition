@@ -181,5 +181,5 @@ $RECYCLE.BIN/
 
 ######################from stackoverflow###########################
 
-# intellij configs
-.idea/
+# intellij configs (disabled ignoring it cuz i wanna save the interperter's imports)
+# .idea/
