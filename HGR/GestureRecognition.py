@@ -2,7 +2,7 @@ from constants import EMPTY_HISTO
 from analysis import mouse_handler
 from info_handlers.data import Data
 from gui import gui_handler as gui
-from cython_funcs import helpers_cy as cy
+#from cython_funcs import helpers_cy as cy
 from segmentation.helpers import open_close
 import segmentation.color_segmentation as csgm
 import segmentation.segmentation as sgm
@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import threading
 import time
 import sql.mySQL as sqlit
+
 db = sqlit.database()
 
 #recist code
@@ -55,6 +56,7 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
     cap = cv2.VideoCapture(cap_path)
     n = 0
     cmds_handler = cmds.CommandsHandler()
+    has_started = False
 
     #loop forever
     while cap.isOpened():
@@ -67,6 +69,15 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
             cap = cv2.VideoCapture(cap_path)
             success, img = cap.read()
 
+        img = cv2.flip(img, 1) #unmirror the image
+        
+        # Only start once 's' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('s'):
+            has_started = True
+        if not has_started:
+            cv2.imshow("start", img)
+            continue
+
         n += 1
         # skips N frames
         if frames_to_skip > 1:
@@ -75,7 +86,6 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
                 continue
             #n = 0
 
-        img = cv2.flip(img, 1) #unmirror the image
 
         if n < 30:
             analyze_frame(img, cmds_handler, is_calc_avg_bg=True)
