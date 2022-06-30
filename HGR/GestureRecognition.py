@@ -1,12 +1,12 @@
 from constants import EMPTY_HISTO
 from analysis import mouse_handler
 from info_handlers.data import Data
+from info_handlers.stack import Stack
 from gui import gui_handler as gui
 #from cython_funcs import helpers_cy as cy
 from segmentation.helpers import open_close
 import segmentation.color_segmentation as csgm
 import segmentation.segmentation as sgm
-import info_handlers.stack as stk
 import analysis.fingers as fings
 import analysis.points as pts
 import analysis.general as general
@@ -19,7 +19,7 @@ import threading
 import time
 import sql.mySQL as sqlit
 
-db = sqlit.database()
+#db = sqlit.database()
 
 #recist code
 
@@ -70,7 +70,7 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
             success, img = cap.read()
 
         img = cv2.flip(img, 1) #unmirror the image
-        
+
         # Only start once 's' is pressed
         if cv2.waitKey(1) & 0xFF == ord('s'):
             has_started = True
@@ -118,7 +118,7 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
         run_avg(gray, aWeight=0.5)
 
         # noinspection PyUnresolvedReferences
-        stack = stk.Stack([img, gray, bg.astype(np.uint8)], size=(1,3))
+        stack = Stack([img, gray, bg.astype(np.uint8)], size=(1,3))
         scale = 3
     elif is_manual:
         # Separate hand from background through hsv difference but manually
@@ -137,7 +137,7 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
             stack, data = analyze_segmented_img(im, binary)
             execute_commands(data, cmds_handler)
         except Exception as e:
-            stack = stk.Stack([im])
+            stack = Stack([im])
             print(e)
 
     #app.frame.panel.put_img(stack)
@@ -149,18 +149,25 @@ def analyze_frame(img, cmds_handler, is_calc_avg_bg=False, is_manual=False):
 def segment(img):
     stack = None
     global ranges
-    stack = segment_bg(img, threshold=40)
-    stack2 = segment_bg(img, threshold=20, is_sat=True)
+    stack = subtract_bg(img, threshold=30)
+    #return stack
+    stack2 = subtract_bg(img, threshold=20, is_sat=True)
+
     arm_img = stack.lst[5]
     arm_img2 = stack2.lst[5]
 
-    both_arms_bin = cv2.bitwise_and(stack.lst[4], stack2.lst[4])
-    both_arms_img = cv2.bitwise_and(img, img, mask=both_arms_bin)
+    arm_both_bins = cv2.bitwise_and(stack.lst[4], stack2.lst[4])
+    arm_both_imgs = cv2.bitwise_and(img, img, mask=arm_both_bins)
 
-    stack3 = stk.Stack([stack.lst[1], stack2.lst[1], stack.lst[2], stack2.lst[2], stack.lst[4], stack2.lst[4], both_arms_bin, both_arms_img])
-    #cv2.imshow("hihihi", stack3.to_viewable_stack(2))
+    #combine 2 subtracted bg images that used different thresholds
+    stack3 = Stack([stack.lst[1], stack2.lst[1], stack.lst[2], stack2.lst[2], stack.lst[4], stack2.lst[4], arm_both_bins, arm_both_imgs])
+    #cv2.imshow("hihihi", stack.to_viewable_stack(2))
 
-    main_area_img = both_arms_img #edge_segmentation(arm_img)
+
+    main_area_img = arm_both_imgs
+
+    stack = Stack([img, arm_both_imgs, edge_segmentation(arm_both_imgs), edge_segmentation(img)])
+
 
     b, no_low_sat = sgm.threshold_low_sat(main_area_img)
     no_white_bin, no_white = sgm.threshold_white_rgb(main_area_img, thresh=150)
@@ -171,7 +178,7 @@ def segment(img):
     stack.append(no_white2)
 
     #cv2.imshow("hihi", stack.to_viewable_stack(2))
-    wanted_img = both_arms_img
+    wanted_img = arm_both_imgs
 
 
     # In stage 1, just show that we are preparing stage 2
@@ -212,9 +219,9 @@ def stage1(img):
         #lab_small, lab_small_no_bg, lab_small_bin = list(sgm.hsv_differentiation(small, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin = list(sgm.hsv_differentiation(small,  seg_type=2))
 
-        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
+        stack = Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], size=(2, 3), is_filler_empty=True)
+        stack = Stack([square_img, small], size=(2, 3), is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -232,9 +239,9 @@ def stage2(img):
         #lab_small, lab_small_no_bg, lab_small_bin, lab_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=1))
         #rgb_small, rgb_small_no_bg, rgb_small_bin, rgb_range = list(sgm.hsv_differentiation(small, get_range=True, seg_type=2))
 
-        stack = stk.Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
+        stack = Stack([square_img, small, hsv_small, hsv_small_no_bg, hsv_small_bin])
     except Exception as e:
-        stack = stk.Stack([square_img, small], size=(2, 3), is_filler_empty=True)
+        stack = Stack([square_img, small], size=(2, 3), is_filler_empty=True)
         if e.args[0] != EMPTY_HISTO:
             print(helpers.get_line_num(), ". e:", repr(e))
 
@@ -264,8 +271,8 @@ def stage3(img, non_seg_img):
     hand_bin2 = helpers.get_biggest_object(no_dark_bin)
     hand_img2 = cv2.bitwise_and(no_white, no_white, mask=hand_bin2)
 
-    stack = stk.Stack([img, hsv_img, hsv_edge_no_bg,
-                       dilated_img, hand_img, no_dark_img, hand_img2], size=(2,4), hand_img=hand_img2)
+    stack = Stack([img, hsv_img, hsv_edge_no_bg,
+                   dilated_img, hand_img, no_dark_img, hand_img2], size=(2,4), hand_img=hand_img2)
     stack.hand_img=None
     return stack
 
@@ -300,24 +307,24 @@ def run_avg(img_gray, aWeight):
 
 
 
-def segment_bg(img, threshold=50, is_sat=False):
+def subtract_bg(img, threshold=50, is_sat=False):
     global bg
     gray = helpers.get_gray_blurred_img(img)
     if is_sat:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 1]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 2]
         gray = cv2.GaussianBlur(gray, (3,3), 0)
     # find the absolute difference between background and current frame
     # noinspection PyUnresolvedReferences
     diff = cv2.absdiff(bg.astype("uint8"), gray)
 
     # threshold the diff image so that we get the foreground
-    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)[1]
+    thresholded = cv2.threshold(diff.copy(), threshold, 255, cv2.THRESH_BINARY)[1]
 
     img_max_contour, arm_bin = do_segment_thingy(img, gray, thresholded)
 
     arm_img = cv2.bitwise_and(img, img, mask=arm_bin)
 
-    stack = stk.Stack([img, diff, thresholded, img_max_contour, arm_bin, arm_img])
+    stack = Stack([img, diff, thresholded, img_max_contour, arm_bin, arm_img])
 
     return stack
 
@@ -371,7 +378,7 @@ def analyze_segmented_img(img, binary):
     fings_width_len_list = str(fings.get_fingers_data(fingers))
     #db.update("fings_width_len_list", '\"' + fings_width_len_list + '\"')
 
-    stack = stk.Stack([img, binary, lower_points_img, img_transformed,
+    stack = Stack([img, binary, lower_points_img, img_transformed,
                        center_img, circle, fingers, img_hsv_pts, img_pts])
 
 
