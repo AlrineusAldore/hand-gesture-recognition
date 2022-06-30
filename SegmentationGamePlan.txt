@@ -1,0 +1,5 @@
+segmentation plan:
+
+	if contour touches hsv, fill contour
+	threshold white outta there
+	

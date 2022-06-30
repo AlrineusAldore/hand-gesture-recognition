@@ -1,0 +1,24 @@
+Get 2 highest max points
+
+Get all min points between them
+
+Get rid of min points that have close value maxes (smilar x,y) to the left and right of them
+OR
+min points that have very low incline between them and their neerest max points
+
+Get left min of left top max and right min of right top max
+Seperate values from the lowest min between the 2 top maxes, to the 2 mins found previously
+
+
+if needs more, then seperate the rest of the mins between the 2 top maxes
+
+
+REGION BASED SEGMENTATION:
+
+get different regions.
+-Highest area region is background
+-Second highest area region is hand
+-smaller ones are shadow/objects
+
+also:
+-the region with the highest area that fits the color segmentation is the hand
