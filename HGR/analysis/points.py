@@ -1,6 +1,11 @@
 import cv2
 import numpy as np
 import imutils
+<<<<<<< HEAD
+=======
+import sql.mySQL as sqlit
+#db = sqlit.database()
+>>>>>>> develop
 
 
 # Find all the lower points between the fingers
@@ -20,7 +25,11 @@ def find_lower_points(img):
     # Contours
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if contours == ():
+<<<<<<< HEAD
         return new_img
+=======
+        return new_img, 0
+>>>>>>> develop
     contours = max(contours, key=lambda x: cv2.contourArea(x))
     cv2.drawContours(new_img, [contours], -1, (255, 255, 0), 1)
 
@@ -32,8 +41,15 @@ def find_lower_points(img):
     hull = cv2.convexHull(contours, returnPoints=False)
     defects = cv2.convexityDefects(contours, hull)
     if defects is None:
+<<<<<<< HEAD
         return
     cnt = 0
+=======
+        return new_img, 0
+    cnt = 0
+    angles = []
+    points_between_fingers = []
+>>>>>>> develop
     for i in range(defects.shape[0]):  # Calculate the angle
         s, e, f, d = defects[i][0]
         start = tuple(contours[s][0])
@@ -46,10 +62,22 @@ def find_lower_points(img):
         if angle <= np.pi / 2:  # angle less than 90 degree, treat as fingers
             cnt += 1
             cv2.circle(new_img, far, 2, [0, 0, 255], -1)
+<<<<<<< HEAD
     if cnt > 0:
         cnt = cnt + 1
     cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
 
+=======
+            points_between_fingers.append(far)
+            angles.append(angle)
+    if cnt > 0:
+        cnt = cnt + 1
+    #db.update("angles", '\"' + str(angles) + '\"')
+    #db.update("between_points", '\"' + str(points_between_fingers) + '\"')
+
+    cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
+    #db.update("fingers_count", str(cnt))
+>>>>>>> develop
     return new_img, cnt
 
 
@@ -59,9 +87,25 @@ def extreme_points(binary_img):
     cnts = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
+<<<<<<< HEAD
+=======
+    if not cnts: #return if tuple empty -> no contours
+        return
+>>>>>>> develop
     c = max(cnts, key=cv2.contourArea)
     ext_left = tuple(c[c[:, :, 0].argmin()][0])
     ext_right = tuple(c[c[:, :, 0].argmax()][0])
     ext_top = tuple(c[c[:, :, 1].argmin()][0])
     ext_bot = tuple(c[c[:, :, 1].argmax()][0])
     return ext_left, ext_right, ext_top, ext_bot
+<<<<<<< HEAD
+=======
+
+def findWidth(binary_img):
+    cnts = cv2.findContours(binary_img.copy(), cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    c = max(cnts, key=cv2.contourArea)
+    ext_top = tuple(c[c[:, :, 1].argmin()][0])
+
+>>>>>>> develop

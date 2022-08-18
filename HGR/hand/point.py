@@ -1,4 +1,24 @@
+<<<<<<< HEAD
+=======
+import math
+
+>>>>>>> develop
 class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+<<<<<<< HEAD
+=======
+
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y
+
+    def distance_between_two_points(self, pointB):
+        return math.sqrt((self.x - pointB.getX())**2 + (self.y - pointB.getY())**2)
+
+    def slope(self, pt2):
+        return (pt2.y-self.y)/(pt2.x-self.x)
+>>>>>>> develop
