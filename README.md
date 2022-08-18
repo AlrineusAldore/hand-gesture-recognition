@@ -48,7 +48,8 @@ Planning to implement this part with ML.
 * matplotlib
 * skimage
 * scipy
+* cython
 
 
-## status
+## Status
 Currently the project is still in progress and not finished
