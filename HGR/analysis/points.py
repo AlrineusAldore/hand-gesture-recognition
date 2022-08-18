@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import imutils
 import sql.mySQL as sqlit
-db = sqlit.database()
+#db = sqlit.database()
 
 
 # Find all the lower points between the fingers
@@ -54,11 +54,11 @@ def find_lower_points(img):
             angles.append(angle)
     if cnt > 0:
         cnt = cnt + 1
-    db.update("angles", '\"' + str(angles) + '\"')
-    db.update("between_points", '\"' + str(points_between_fingers) + '\"')
+    #db.update("angles", '\"' + str(angles) + '\"')
+    #db.update("between_points", '\"' + str(points_between_fingers) + '\"')
 
     cv2.putText(new_img, str(cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
-    db.update("fingers_count", str(cnt))
+    #db.update("fingers_count", str(cnt))
     return new_img, cnt
 
 

@@ -74,6 +74,7 @@ def analyze_capture(cap_path, frames_to_skip, app=None):
         # Only start once 's' is pressed
         if cv2.waitKey(1) & 0xFF == ord('s'):
             has_started = True
+            cv2.destroyWindow("start")
         if not has_started:
             cv2.imshow("start", img)
             continue

@@ -1,7 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('hrtr.db')
-cur = con.cursor()
+
 #               DATABASE STRUCTURE
 #...............................................................................................................................
 #:  angles   :       extream_points       : fingers_count :   between_finger_points    :  fingers_lemfings_width_len_list gth  :
@@ -13,6 +12,8 @@ cur = con.cursor()
 
 class database:
     def __init__(self):
+        self.con = sqlite3.connect('hrtr.db')
+        self.cur = self.con.cursor()
         self.creatTable("HAND_DATA",
                         "frame_id int,"
                         "angles text,"
@@ -24,24 +25,24 @@ class database:
         self.insertData("1, null, null, null, null, null")
 
     def update(self, colName , strdata):
-        cur.execute("UPDATE HAND_DATA SET " + colName + " = " + strdata + " WHERE frame_id = 1;")
-        con.commit()
+        self.cur.execute("UPDATE HAND_DATA SET " + colName + " = " + strdata + " WHERE frame_id = 1;")
+        self.con.commit()
 
     def creatTable(self, tableName, columsName):
-        cur.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" + columsName +");")
-        con.commit()
+        self.cur.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" + columsName +");")
+        self.con.commit()
 
     def insertData(self, dataStr):
         # Insert a row of data
 
-        cur.execute("INSERT INTO HAND_DATA VALUES (" + dataStr + ")")
+        self.cur.execute("INSERT INTO HAND_DATA VALUES (" + dataStr + ")")
 
         # Save (commit) the changes
-        con.commit()
+        self.con.commit()
         #con.close()
 
     def getData(self, tableName):
         result = []
-        for row in cur.execute('SELECT * FROM ' + tableName):
+        for row in self.cur.execute('SELECT * FROM ' + tableName):
             result.append(row)
         return result
