@@ -1,32 +1,12 @@
 from gui.constants import *
-<<<<<<< HEAD
-from gui.capture_hanlder import *
-import cv2
-=======
 from gui.capture_panel import *
 from gui.control_panel import *
 import cv2
 import matplotlib
->>>>>>> develop
 import numpy as np
 import wx
 
 
-<<<<<<< HEAD
-class MyApp(wx.App):
-    def __init__(self):
-        super().__init__(clearSigInt=True)
-
-        self.init_frame()
-
-
-def make_gui():
-    capture = cv2.VideoCapture(0)
-    app = wx.App()
-    frame = wx.Frame(None)
-    ShowCapture(frame, capture)
-
-=======
 class main_panel(wx.Frame):
     def __init__(self):
         capture = cv2.VideoCapture(0)
@@ -55,7 +35,6 @@ class main_panel(wx.Frame):
 def make_gui():
     app = wx.App()
     frame = main_panel()
->>>>>>> develop
     frame.Show()
     app.MainLoop()
     return app
@@ -74,8 +53,4 @@ def cvimage_to_wx(cv2_image):
     cv2_image = data.astype(np.uint8)
 
     cv2_image_rgb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
-<<<<<<< HEAD
     return wx.Bitmap.FromBuffer(width, height, cv2_image_rgb)
-=======
-    return wx.Bitmap.FromBuffer(width, height, cv2_image_rgb)
->>>>>>> develop

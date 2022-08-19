@@ -1,20 +1,14 @@
 import cv2
 import numpy as np
-<<<<<<< HEAD
-=======
 import time
 from inspect import currentframe
->>>>>>> develop
 
 
 def empty(a):
     pass
 
-<<<<<<< HEAD
-=======
 def get_line_num():
     return "line num: " + str(currentframe().f_back.f_lineno)
->>>>>>> develop
 
 # Initialize the manual hsv values windows
 def InitializeWindows():
@@ -52,40 +46,6 @@ def autoCropBinImg(bin):
 
 
 # Find contours from img, and draw them on imgContour and imgCanvas
-<<<<<<< HEAD
-def drawContours(img, imgContour, imgCanvas):
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 20:  # to discard small random lines
-            # print("cuntour: ", cnt)
-            # print('area: ', area)
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
-            cv2.drawContours(imgCanvas, cnt, -1, (255, 0, 0), 2)
-
-            peri = cv2.arcLength(cnt, True)  # perimeter
-            approx = cv2.approxPolyDP(cnt, 0.2 * peri, True)  # Points
-            # print("approx: ", approx)
-            cv2.drawContours(imgContour, approx, -1, (0, 255, 0), 3)
-            cv2.drawContours(imgCanvas, approx, -1, (0, 255, 0), 3)
-
-
-def slow(imgTransformed):
-    h = imgTransformed.shape[0]
-    w = imgTransformed.shape[1]
-
-    skeleton = imgTransformed.copy()
-
-    for y in range(0, h):
-        for x in range(0, w):
-            if imgTransformed[y, x] == 240:
-                skeleton[y, x] = imgTransformed[y, x]
-            else:
-                skeleton[y, x] = 0
-
-    return skeleton
-=======
 def draw_contours(img, img_contour=None, img_canvas=None, retrieval_method=cv2.RETR_EXTERNAL, draw_pts=True, min_area=20, contours=None):
     if contours is None:
         contours, hierarchy = cv2.findContours(img, retrieval_method, cv2.CHAIN_APPROX_NONE)
@@ -151,4 +111,3 @@ def timer(seconds, stage, not_started_clock):
 
     stage[0] += 1
     not_started_clock[0] = True
->>>>>>> develop
