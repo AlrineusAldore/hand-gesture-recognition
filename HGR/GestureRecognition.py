@@ -33,7 +33,6 @@ clock_has_not_started = [True]
 bg = None
 
 
-
 def main():
     plt.show()
     plt.ion()
@@ -53,7 +52,6 @@ def main():
 
 
 # Fully analyzes a whole capture
-
 def analyze_capture(cap_path, frames_to_skip, app=None):
     cap = cv2.VideoCapture(cap_path)
     n = 0

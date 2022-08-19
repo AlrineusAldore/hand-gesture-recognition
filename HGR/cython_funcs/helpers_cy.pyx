@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 # noinspection PyStatementEffect
->>>>>>> develop
 def test(x):
     cdef int y = 0
     cdef int i = 0
